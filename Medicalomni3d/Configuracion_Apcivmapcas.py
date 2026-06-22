@@ -82,6 +82,7 @@ class Configuracionnnunetv2:
     def Configuracion_apcivmapcas_json(cls):
         try:
             archivojson = cls.BASE_CONFIGURACION
+            os.makedirs(os.path.dirname(archivojson), exist_ok=True)
             if os.path.exists(archivojson):
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
