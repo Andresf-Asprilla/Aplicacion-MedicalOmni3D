@@ -1,4 +1,5 @@
 import sys,platform
+from PIL import Image, ImageTk
 import tkinter as tk
 import SimpleITK as sitk
 from Medicalomni3d.Visor_medicalomni3d import Visor_MedicalOmni3D
@@ -111,10 +112,13 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
     def Configuracion_ventana_principal_MedicalOmni3d(self):
         self.title("MedicalOmni3D")
-        self.iconbitmap(self.icono_app)
         if platform.system() == "Windows":
+            self.iconbitmap(self.icono_app)
             self.state("zoomed")
         else:
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            self.iconphoto(True, icon_photo)
             self.attributes('-zoomed', True)
 
         self.configure(background="#C7C7C7")
