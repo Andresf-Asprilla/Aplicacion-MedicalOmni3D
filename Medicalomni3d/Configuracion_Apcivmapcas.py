@@ -178,7 +178,12 @@ class Configuracionnnunetv2:
         cls.BANDERA_IMPORTACION=True
         ventana = tk.Toplevel(master)
         Configuracion_ventana(ventana=ventana,ancho=350,alto=100,titulo="Importación de Modelo...",no_modificar=True)
-        ventana.iconbitmap(os.path.join(basedir, "Assets", "medicalomni3d.ico"))
+        if platform.system() == "Windows":
+            ventana.iconbitmap(self.icono_app)
+        else:
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            ventana.iconphoto(True, icon_photo)
         ventana.transient(master)
         ventana.focus()
         ventana.grab_set()

@@ -847,7 +847,13 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Ventana_editar_usuario(self):
         self.ventana_editar = tk.Toplevel(self)
         Configuracion_ventana(ventana=self.ventana_editar,ancho=600,alto=450,titulo="Nuevo usuario",no_modificar=True)
-        self.ventana_editar.iconbitmap(self.icono_app)
+        if platform.system() == "Windows":
+            self.ventana_editar.iconbitmap(self.icono_app)
+        else:
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            self.ventana_editar.iconphoto(True, icon_photo)
+
         self.ventana_editar.transient(self)
         self.ventana_editar.grab_set()
         self.ventana_editar.focus_force()
@@ -892,7 +898,12 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Ventana_creacion_usuario(self,event):
         self.ventana = tk.Toplevel(self)
         Configuracion_ventana(ventana=self.ventana,ancho=600,alto=450,titulo="Nuevo usuario",no_modificar=True)
-        self.ventana.iconbitmap(self.icono_app)
+        if platform.system() == "Windows":
+            self.ventana.iconbitmap(self.icono_app)
+        else:
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            self.ventana.iconphoto(True, icon_photo)
         self.ventana.transient(self)
         self.ventana.grab_set()
         self.ventana.focus_force()
@@ -1088,7 +1099,12 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Confirmar_salida(self):
         ventana = tk.Toplevel(self)
         Configuracion_ventana(ventana=ventana,ancho=300,alto=120,titulo="Confirmar salida",no_modificar=True)
-        ventana.iconbitmap(self.icono_app)
+        if platform.system() == "Windows":
+            ventana.iconbitmap(self.icono_app)
+        else:
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            ventana.iconphoto(True, icon_photo)
         ventana.transient(self)
         ventana.focus_force()
         ventana.grab_set()
