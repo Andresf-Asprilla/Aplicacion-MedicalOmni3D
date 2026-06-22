@@ -137,40 +137,57 @@ class Configuracionnnunetv2:
     @classmethod
     def Importacion_modelo(cls, path_model: str = "") -> None:
         try:
+            print(f"[DEBUG] Iniciando importación: {path_model}")
             archivojson = cls.BASE_CONFIGURACION
             if os.path.exists(archivojson):
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
+            else:
+                print("[DEBUG] ERROR: archivo json no existe")
+                cls.BANDERA_IMPORTACION = False
+                return
+
             if os.path.isfile(path_model):
+                print(f"[DEBUG] Archivo zip encontrado")
                 with zipfile.ZipFile(path_model, 'r') as zip_ref:
                     nombres = zip_ref.namelist()
+                    print(f"[DEBUG] Contenido zip: {nombres[:5]}")
                     carpeta_principal = nombres[0].split("/")[0]
-                    cls.ruta_dataset = os.path.join(cls.PATH_DICT["nnUNet_results"],carpeta_principal)
+                    print(f"[DEBUG] Carpeta principal: {carpeta_principal}")
+                    cls.ruta_dataset = os.path.join(cls.PATH_DICT["nnUNet_results"], carpeta_principal)
+                    print(f"[DEBUG] Ruta dataset destino: {cls.ruta_dataset}")
+
                     modelo_existente = None
                     for nombre_modelo, info_modelo in config_model["modelos"].items():
                         if info_modelo["dataset"] == carpeta_principal:
                             modelo_existente = nombre_modelo
                             break
+
                     if os.path.exists(cls.ruta_dataset):
-                        if  modelo_existente:
-                            cls.BANDERA_IMPORTACION = False
-                            messagebox.showerror(title="Error en la importación del modelo",message=f"El dataset {carpeta_principal} ya se encuentra previamente instalado y pertenece al modelo {modelo_existente}. Para solucionarlo, elimine el modelo previo y vuelva a instalarlo.")
-
-                        else:
-                            shutil.rmtree(cls.ruta_dataset)
-                            cls.BANDERA_IMPORTACION=False
-
+                        print(f"[DEBUG] Dataset ya existe en destino")
+                        cls.BANDERA_IMPORTACION = False
                         return
-                    name_model=os.path.basename(path_model).split(".")[-2]
-                    if not  name_model in config_model["modelos"].keys():
+
+                    name_model = os.path.basename(path_model).split(".")[0]  # solo primer punto
+                    print(f"[DEBUG] Nombre del modelo: {name_model}")
+
+                    if name_model not in config_model["modelos"].keys():
+                        print(f"[DEBUG] Extrayendo zip...")
                         zip_ref.extractall(cls.PATH_DICT["nnUNet_results"])
+                        print(f"[DEBUG] Zip extraído, configurando json...")
                         cls.Configuracion_importacion_modelo_json(name_model)
+                        print(f"[DEBUG] Importación completada")
                     else:
-                        messagebox.showerror(title="Error en la importación del modelo",
-                                             message=f"Ya se encuentra un modelo previamente instalado con el nombre {name_model}. Para corregir esto, desinstale el modelo previo e intente instalarlo nuevamente.")
+                        print(f"[DEBUG] Modelo {name_model} ya existe en config")
+                        cls.BANDERA_IMPORTACION = False
+            else:
+                print(f"[DEBUG] ERROR: archivo no encontrado: {path_model}")
+                cls.BANDERA_IMPORTACION = False
 
         except Exception as e:
+            print(f"[DEBUG] EXCEPCION: {e}")
             log.error(f"Error en la importación del modelo:\n{e}")
+            cls.BANDERA_IMPORTACION = False
 
 
     @classmethod
@@ -184,17 +201,21 @@ class Configuracionnnunetv2:
             icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
             icon_photo = ImageTk.PhotoImage(icon_img)
             ventana.iconphoto(True, icon_photo)
+
         ventana.transient(master)
-        ventana.focus()
-        ventana.grab_set()
         ventana.protocol("WM_DELETE_WINDOW", lambda: None)
-        ttk.Label(ventana,text="Importando modelo, por favor espere...").pack(pady=10)
-        progreso = ttk.Progressbar(ventana,mode="indeterminate",length=280)
+
+        ttk.Label(ventana, text="Importando modelo, por favor espere...").pack(pady=10)
+        progreso = ttk.Progressbar(ventana, mode="indeterminate", length=280)
         progreso.pack(pady=5)
+        ventana.update()
+        ventana.update_idletasks()
         progreso.start(12)
-        hilo = threading.Thread(target=cls.Importacion_modelo,args=(path_model,),daemon=True)
+        ventana.grab_set()
+        ventana.focus()
+        hilo = threading.Thread(target=cls.Importacion_modelo, args=(path_model,), daemon=True)
         hilo.start()
-        cls.monitorear_importacion(ventana,progreso,hilo,callback,master=master)
+        cls.monitorear_importacion(ventana, progreso, hilo, callback, master=master)
 
     @classmethod
     def monitorear_importacion(cls, ventana, progreso, hilo,callback,master):
