@@ -189,33 +189,28 @@ class Configuracionnnunetv2:
             log.error(f"Error en la importación del modelo:\n{e}")
             cls.BANDERA_IMPORTACION = False
 
-
     @classmethod
     def ventana_importar_modelo(cls, master, path_model:str,callback=None):
         cls.BANDERA_IMPORTACION=True
         ventana = tk.Toplevel(master)
         Configuracion_ventana(ventana=ventana,ancho=350,alto=100,titulo="Importación de Modelo...",no_modificar=True)
         if platform.system() == "Windows":
-            ventana.iconbitmap(self.icono_app)
+            ventana.iconbitmap(os.path.join(basedir, "Assets", "medicalomni3d.ico"))
         else:
             icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
             icon_photo = ImageTk.PhotoImage(icon_img)
             ventana.iconphoto(True, icon_photo)
-
         ventana.transient(master)
-        ventana.protocol("WM_DELETE_WINDOW", lambda: None)
-
-        ttk.Label(ventana, text="Importando modelo, por favor espere...").pack(pady=10)
-        progreso = ttk.Progressbar(ventana, mode="indeterminate", length=280)
-        progreso.pack(pady=5)
-        ventana.update()
-        ventana.update_idletasks()
-        progreso.start(12)
-        ventana.grab_set()
         ventana.focus()
-        hilo = threading.Thread(target=cls.Importacion_modelo, args=(path_model,), daemon=True)
+        ventana.grab_set()
+        ventana.protocol("WM_DELETE_WINDOW", lambda: None)
+        ttk.Label(ventana,text="Importando modelo, por favor espere...").pack(pady=10)
+        progreso = ttk.Progressbar(ventana,mode="indeterminate",length=280)
+        progreso.pack(pady=5)
+        progreso.start(12)
+        hilo = threading.Thread(target=cls.Importacion_modelo,args=(path_model,),daemon=True)
         hilo.start()
-        cls.monitorear_importacion(ventana, progreso, hilo, callback, master=master)
+        cls.monitorear_importacion(ventana,progreso,hilo,callback,master=master)
 
     @classmethod
     def monitorear_importacion(cls, ventana, progreso, hilo,callback,master):
