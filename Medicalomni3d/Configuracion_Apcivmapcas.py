@@ -195,16 +195,14 @@ class Configuracionnnunetv2:
         ventana = tk.Toplevel(master)
         Configuracion_ventana(ventana=ventana, ancho=350, alto=100, titulo="Importación de Modelo...",
                               no_modificar=True)
-
-        # Ícono multiplataforma
         try:
             sistema = platform.system()
             if sistema == "Windows":
                 ventana.iconbitmap(os.path.join(basedir, "Assets", "medicalomni3d.ico"))
-            else:  # Linux y macOS
+            else:
                 icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
                 icon_photo = ImageTk.PhotoImage(icon_img)
-                ventana._icon_photo = icon_photo  # evitar garbage collection
+                ventana._icon_photo = icon_photo
                 ventana.iconphoto(True, icon_photo)
         except Exception:
             pass
