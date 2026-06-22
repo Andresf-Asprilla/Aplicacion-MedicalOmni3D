@@ -5,6 +5,7 @@ import multiprocessing
 import sys,os,platform
 from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana,Estilos
 from Medicalomni3d.Configuracion_Apcivmapcas import Configuracionnnunetv2
+from Medicalomni3d.Dao_medicalomni3d import DAOMedicalOmni3D
 
 basedir = os.path.dirname(__file__)
 
