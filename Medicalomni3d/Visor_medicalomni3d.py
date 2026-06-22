@@ -3,7 +3,7 @@ import vtk
 from vtk.util import numpy_support
 import numpy as np
 import colorsys
-import platform
+import sys,platform
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
@@ -175,33 +175,33 @@ class Visor_MedicalOmni3D:
 
     def inicializar_vtk_seguro(self, mascara: str = None):
         sistema = platform.system()
-        if sistema == "Darwin":
+        if sistema == "Darwin" or sistema == "Linux":
             self.mascara = mascara if mascara else None
-            lbl_mac = tk.Label(
+            # Limpiar frame_3d
+            for widget in self.frame_3d.winfo_children():
+                widget.destroy()
+            lbl = tk.Label(
                 self.frame_3d,
-                text="Visualizador Médico 3D (macOS)\n\nEl motor gráfico requiere una ejecución externa\npara evitar fallos de memoria en el sistema.",
+                text="Visualizador 3D\n\nHaga clic en el botón para\nabrir el renderizador volumétrico.",
                 justify=tk.CENTER, bg="#1a1a1a", fg="white", font=("Arial", 12)
             )
-            lbl_mac.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
-            btn_abrir_3d = ttk.Button(
+            lbl.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+            btn = ttk.Button(
                 self.frame_3d,
                 text="Abrir Renderizador Volumétrico",
-                command=self.abrir_ventana_vtk_mac
+                command=self.abrir_ventana_vtk_mac  # mismo método, sirve para Linux
             )
-            btn_abrir_3d.place(relx=0.5, rely=0.65, anchor=tk.CENTER)
+            btn.place(relx=0.5, rely=0.65, anchor=tk.CENTER)
         else:
+            # Windows
+            import sys
             window_id = self.frame_3d.winfo_id()
+            puntero_void_str = f"_{window_id:016x}_p_void" if sys.maxsize > 2 ** 32 else f"_{window_id:08x}_p_void"
             try:
                 self.render_window = vtk.vtkRenderWindow()
                 self.interactor = vtk.vtkRenderWindowInteractor()
                 self.interactor.SetRenderWindow(self.render_window)
-                if sistema == "Windows":
-                    import sys
-                    puntero_void_str = f"_{window_id:016x}_p_void" if sys.maxsize > 2 ** 32 else f"_{window_id:08x}_p_void"
-                    self.render_window.SetParentId(puntero_void_str)
-                else:
-                    self.render_window.SetWindowId(window_id)
-
+                self.render_window.SetParentId(puntero_void_str)
                 self.render_window.AddRenderer(self.renderer)
                 if mascara:
                     self.mascara = mascara
@@ -216,8 +216,8 @@ class Visor_MedicalOmni3D:
                 self.render_window.Render()
                 self.interactor.Initialize()
                 self.frame_3d.bind("<Configure>", self.on_resize)
-            except ImportError:
-                pass
+            except Exception as e:
+                log.error(f"Error al inicializar VTK: {e}")
     def destruir_visor(self):
         try:
             if self.interactor:

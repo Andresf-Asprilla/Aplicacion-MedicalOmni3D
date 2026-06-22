@@ -1,5 +1,5 @@
+import sys,platform
 import tkinter as tk
-from idlelib.mainmenu import menudefs
 import SimpleITK as sitk
 from Medicalomni3d.Visor_medicalomni3d import Visor_MedicalOmni3D
 from Medicalomni3d.loggin_MedicalOmni3d import log
@@ -83,12 +83,14 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         if hasattr(self, "visor") and self.visor is not None:
             self.visor.destruir_visor()
         DAOMedicalOmni3D.Insertar_registro_intento(self.usuario, self.usuario.ACCIONES[2])
+        Configuracionnnunetv2.Eliminacion_json_salida()
         self.master.destroy()
 
     def cerrar_sesion(self,event):
         if hasattr(self, "visor") and self.visor is not None:
             self.visor.destruir_visor()
         DAOMedicalOmni3D.Insertar_registro_intento(self.usuario, self.usuario.ACCIONES[2])
+        Configuracionnnunetv2.Eliminacion_json_salida()
         self.destroy()
         self.master.deiconify()
         
@@ -110,7 +112,11 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Configuracion_ventana_principal_MedicalOmni3d(self):
         self.title("MedicalOmni3D")
         self.iconbitmap(self.icono_app)
-        self.state("zoomed")
+        if platform.system() == "Windows":
+            self.state("zoomed")
+        else:
+            self.attributes('-zoomed', True)
+
         self.configure(background="#C7C7C7")
         pantalla_ancho =int(self.winfo_screenwidth()/1.2)
         pantalla_alto = int(self.winfo_screenheight()/1.2)
