@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 import multiprocessing
-import sys,os
+import sys,os,platform
 from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana,Estilos
 from Medicalomni3d.Configuracion_Apcivmapcas import Configuracionnnunetv2
 
@@ -28,7 +28,6 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.aplicar_espaciado = congiguracion['modelos'][self.modelo_seleccionado]["Espaciado"]
         self.espaciado_orig = espaciado_orig
         Configuracion_ventana(ventana=self,ancho=350,alto=130,titulo="Ejecutando Inferencia",no_modificar=True)
-        self.iconbitmap(os.path.join(basedir, "Assets", "medicalomni3d.ico"))
         self.transient(master)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", lambda: None)
@@ -39,8 +38,18 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.progreso.pack(pady=5)
         self.boton_cancelar.pack(anchor=tk.E,pady=10,padx=20)
         self.progreso.start(12)
-
         self.after(150, self.iniciar_fase_1_proceso)
+        try:
+            if platform.system() == "Windows":
+                self.iconbitmap(os.path.join(basedir, "Assets", "medicalomni3d.ico"))
+            else:
+                from PIL import Image, ImageTk
+                icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+                icon_photo = ImageTk.PhotoImage(icon_img)
+                self._icon_photo = icon_photo
+                self.iconphoto(True, icon_photo)
+        except Exception:
+            pass
 
     def iniciar_fase_1_proceso(self):
 
