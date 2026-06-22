@@ -139,23 +139,27 @@ class Configuracionnnunetv2:
         try:
             print(f"[DEBUG] Iniciando importación: {path_model}")
             archivojson = cls.BASE_CONFIGURACION
-            if os.path.exists(archivojson):
-                with open(archivojson, "r") as archivo_j:
-                    config_model = json.load(archivo_j)
-            else:
-                print("[DEBUG] ERROR: archivo json no existe")
-                cls.BANDERA_IMPORTACION = False
-                return
+            print(f"[DEBUG] JSON path: {archivojson}")
+            print(f"[DEBUG] JSON existe: {os.path.exists(archivojson)}")
+            print(f"[DEBUG] JSON tamaño: {os.path.getsize(archivojson)}")
+
+            with open(archivojson, "r") as archivo_j:
+                contenido = archivo_j.read()
+                print(f"[DEBUG] JSON contenido raw: '{contenido[:100]}'")
+                config_model = json.loads(contenido)
+
+            print(f"[DEBUG] JSON cargado OK: {list(config_model.keys())}")
+            print(f"[DEBUG] ZIP existe: {os.path.isfile(path_model)}")
 
             if os.path.isfile(path_model):
-                print(f"[DEBUG] Archivo zip encontrado")
                 with zipfile.ZipFile(path_model, 'r') as zip_ref:
                     nombres = zip_ref.namelist()
-                    print(f"[DEBUG] Contenido zip: {nombres[:5]}")
+                    print(f"[DEBUG] ZIP contenido (primeros 5): {nombres[:5]}")
                     carpeta_principal = nombres[0].split("/")[0]
                     print(f"[DEBUG] Carpeta principal: {carpeta_principal}")
                     cls.ruta_dataset = os.path.join(cls.PATH_DICT["nnUNet_results"], carpeta_principal)
-                    print(f"[DEBUG] Ruta dataset destino: {cls.ruta_dataset}")
+                    print(f"[DEBUG] Ruta destino: {cls.ruta_dataset}")
+                    print(f"[DEBUG] Destino existe: {os.path.exists(cls.ruta_dataset)}")
 
                     modelo_existente = None
                     for nombre_modelo, info_modelo in config_model["modelos"].items():
@@ -164,28 +168,30 @@ class Configuracionnnunetv2:
                             break
 
                     if os.path.exists(cls.ruta_dataset):
-                        print(f"[DEBUG] Dataset ya existe en destino")
+                        print(f"[DEBUG] Dataset ya existe, abortando")
                         cls.BANDERA_IMPORTACION = False
                         return
 
-                    name_model = os.path.basename(path_model).split(".")[0]  # solo primer punto
-                    print(f"[DEBUG] Nombre del modelo: {name_model}")
+                    name_model = os.path.basename(path_model).split(".")[0]
+                    print(f"[DEBUG] Nombre modelo: {name_model}")
 
                     if name_model not in config_model["modelos"].keys():
-                        print(f"[DEBUG] Extrayendo zip...")
+                        print(f"[DEBUG] Extrayendo ZIP en: {cls.PATH_DICT['nnUNet_results']}")
                         zip_ref.extractall(cls.PATH_DICT["nnUNet_results"])
-                        print(f"[DEBUG] Zip extraído, configurando json...")
+                        print(f"[DEBUG] Extracción completa, configurando JSON...")
                         cls.Configuracion_importacion_modelo_json(name_model)
-                        print(f"[DEBUG] Importación completada")
+                        print(f"[DEBUG] Todo OK")
                     else:
-                        print(f"[DEBUG] Modelo {name_model} ya existe en config")
+                        print(f"[DEBUG] Modelo {name_model} ya registrado en JSON")
                         cls.BANDERA_IMPORTACION = False
             else:
-                print(f"[DEBUG] ERROR: archivo no encontrado: {path_model}")
+                print(f"[DEBUG] ZIP no encontrado: {path_model}")
                 cls.BANDERA_IMPORTACION = False
 
         except Exception as e:
+            import traceback
             print(f"[DEBUG] EXCEPCION: {e}")
+            print(traceback.format_exc())
             log.error(f"Error en la importación del modelo:\n{e}")
             cls.BANDERA_IMPORTACION = False
 
