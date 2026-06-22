@@ -215,11 +215,8 @@ class Configuracionnnunetv2:
         ttk.Label(ventana, text="Importando modelo, por favor espere...").pack(pady=10)
         progreso = ttk.Progressbar(ventana, mode="indeterminate", length=280)
         progreso.pack(pady=5)
-
-        # Forzar renderizado antes de grab_set (crítico en Linux/macOS)
         ventana.update()
         ventana.update_idletasks()
-
         progreso.start(12)
         ventana.grab_set()
         ventana.focus()
