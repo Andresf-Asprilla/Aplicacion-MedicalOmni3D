@@ -65,6 +65,8 @@ class Configuracionnnunetv2:
     @classmethod
     def Creacion_variables_entorno(cls):
         try:
+            os.makedirs(cls.PATH_CONFIGURACION, exist_ok=True)
+            os.makedirs(cls.PATH_LOGGING, exist_ok=True)
             for env_var, path in cls.PATH_DICT.items():
                 os.environ[env_var] = path
                 cls.Creacion_carpetas(path, overwrite=False)
