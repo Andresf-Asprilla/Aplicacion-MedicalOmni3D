@@ -5,8 +5,7 @@ import numpy as np
 import colorsys
 import sys,platform
 import tkinter as tk
-from tkinter import *
-from tkinter import ttk
+from tkinter import ttk,messagebox
 from PIL import Image, ImageTk
 from Medicalomni3d.loggin_MedicalOmni3d import log
 from Medicalomni3d.Configuracion_medicalomni3d import Estilos
