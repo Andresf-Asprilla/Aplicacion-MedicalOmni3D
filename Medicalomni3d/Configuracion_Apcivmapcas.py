@@ -141,8 +141,32 @@ class Configuracionnnunetv2:
     def Importacion_modelo(cls, path_model: str = "") -> None:
         try:
             archivojson = cls.BASE_CONFIGURACION
-            with open(archivojson, "r") as archivo_j:
-                config_model = json.load(archivo_j)
+
+            # Cargar o inicializar el JSON de configuración
+            config_default = {
+                "modelos": {},
+                "tipo_archivo_ex": "NIfTI",
+                "path_import_imagen": "",
+                "path_import_modelo": "",
+                "path_export_imagen": "",
+                "modelo_seleccionado": ""
+            }
+
+            if not os.path.exists(archivojson) or os.path.getsize(archivojson) == 0:
+                os.makedirs(os.path.dirname(archivojson), exist_ok=True)
+                with open(archivojson, "w") as f:
+                    json.dump(config_default, f, indent=4)
+                config_model = config_default
+            else:
+                try:
+                    with open(archivojson, "r") as archivo_j:
+                        config_model = json.load(archivo_j)
+                except json.JSONDecodeError:
+                    print("[DEBUG] JSON corrupto, reinicializando...")
+                    with open(archivojson, "w") as f:
+                        json.dump(config_default, f, indent=4)
+                    config_model = config_default
+
             print(f"[DEBUG] JSON cargado OK: {list(config_model.keys())}")
             print(f"[DEBUG] ZIP existe: {os.path.isfile(path_model)}")
 
@@ -168,7 +192,6 @@ class Configuracionnnunetv2:
                         return
 
                     name_model = os.path.basename(path_model).split(".")[0]
-
 
                     if name_model not in config_model["modelos"].keys():
                         zip_ref.extractall(cls.PATH_DICT["nnUNet_results"])
