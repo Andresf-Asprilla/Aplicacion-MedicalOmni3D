@@ -86,21 +86,20 @@ class Configuracionnnunetv2:
                         "path_export_imagen": "", "modelo_seleccionado": ""}
         try:
             archivojson = cls.BASE_CONFIGURACION
-            #os.makedirs(os.path.dirname(archivojson), exist_ok=True)
-            print(archivojson)
             if os.path.exists(archivojson):
+                print("leyendo json")
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
                 print(config_model)
                 return config_model
             else:
+                print("creando json")
                 with open(archivojson, "w") as f:
                     json.dump(config_model, f, indent=4)
-                print(config_model)
                 return config_model
         except Exception as e:
             log.error(f"Error en la configuracion del archivo json:\n{e}")
-            return config_model
+            #return config_model
 
     @classmethod
     def Configuracion_importacion_modelo_json(cls, name_model: str = ""):
@@ -125,7 +124,6 @@ class Configuracionnnunetv2:
                     shutil.rmtree(cls.ruta_dataset)
                     cls.BANDERA_IMPORTACION=False
                 else:
-
                     archivojson = cls.BASE_CONFIGURACION
                     if os.path.exists(archivojson):
                         with open(archivojson, "r") as archivo_j:
@@ -243,6 +241,7 @@ class Configuracionnnunetv2:
                     callback()
             if cls.BANDERA_IMPORTACION:
                 messagebox.showinfo(title="Exito en importación del modelo",message=f"Sea importado el modelo de manera exitosa")
+
                 master.focus()
 
     @classmethod
