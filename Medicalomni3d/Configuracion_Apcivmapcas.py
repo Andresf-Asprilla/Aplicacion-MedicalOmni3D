@@ -34,6 +34,7 @@ class Configuracionnnunetv2:
         "nnUNet_Procesamiento_imagenes": os.path.join(BASE_DIR, "nnUNet_Procesamiento_imagenes"),
         "nnUNet_Salida_imagenes_modelo": os.path.join(BASE_DIR, "nnUNet_Salida_imagenes_modelo"),
         "Base_Datos_MedicalOmni3D": BASE_DIR2,
+        "Configuracion_medicalomni":os.path.dirname(BASE_CONFIGURACION)
     }
     BANDERA_IMPORTACION=True
     BANDERA_TERMINAR_BARRA=False
