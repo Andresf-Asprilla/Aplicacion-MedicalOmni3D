@@ -87,17 +87,20 @@ class Configuracionnnunetv2:
         try:
             archivojson = cls.BASE_CONFIGURACION
             #os.makedirs(os.path.dirname(archivojson), exist_ok=True)
+            print(archivojson)
             if os.path.exists(archivojson):
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
+                print(config_model)
                 return config_model
             else:
                 with open(archivojson, "w") as f:
                     json.dump(config_model, f, indent=4)
+                print(config_model)
                 return config_model
         except Exception as e:
             log.error(f"Error en la configuracion del archivo json:\n{e}")
-            return config_default
+            return config_model
 
     @classmethod
     def Configuracion_importacion_modelo_json(cls, name_model: str = ""):
