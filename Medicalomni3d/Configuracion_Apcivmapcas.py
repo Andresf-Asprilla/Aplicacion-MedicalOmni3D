@@ -141,8 +141,6 @@ class Configuracionnnunetv2:
     def Importacion_modelo(cls, path_model: str = "") -> None:
         try:
             archivojson = cls.BASE_CONFIGURACION
-
-            # Cargar o inicializar el JSON de configuración
             config_default = {
                 "modelos": {},
                 "tipo_archivo_ex": "NIfTI",
@@ -151,8 +149,7 @@ class Configuracionnnunetv2:
                 "path_export_imagen": "",
                 "modelo_seleccionado": ""
             }
-
-            if not os.path.exists(archivojson) or os.path.getsize(archivojson) == 0:
+            if not os.path.exists(archivojson):
                 os.makedirs(os.path.dirname(archivojson), exist_ok=True)
                 with open(archivojson, "w") as f:
                     json.dump(config_default, f, indent=4)
@@ -162,24 +159,15 @@ class Configuracionnnunetv2:
                     with open(archivojson, "r") as archivo_j:
                         config_model = json.load(archivo_j)
                 except json.JSONDecodeError:
-                    print("[DEBUG] JSON corrupto, reinicializando...")
                     with open(archivojson, "w") as f:
                         json.dump(config_default, f, indent=4)
                     config_model = config_default
 
-            print(f"[DEBUG] JSON cargado OK: {list(config_model.keys())}")
-            print(f"[DEBUG] ZIP existe: {os.path.isfile(path_model)}")
-
             if os.path.isfile(path_model):
                 with zipfile.ZipFile(path_model, 'r') as zip_ref:
                     nombres = zip_ref.namelist()
-                    print(f"[DEBUG] ZIP contenido (primeros 5): {nombres[:5]}")
                     carpeta_principal = nombres[0].split("/")[0]
-                    print(f"[DEBUG] Carpeta principal: {carpeta_principal}")
                     cls.ruta_dataset = os.path.join(cls.PATH_DICT["nnUNet_results"], carpeta_principal)
-                    print(f"[DEBUG] Ruta destino: {cls.ruta_dataset}")
-                    print(f"[DEBUG] Destino existe: {os.path.exists(cls.ruta_dataset)}")
-
                     modelo_existente = None
                     for nombre_modelo, info_modelo in config_model["modelos"].items():
                         if info_modelo["dataset"] == carpeta_principal:
@@ -187,7 +175,7 @@ class Configuracionnnunetv2:
                             break
 
                     if os.path.exists(cls.ruta_dataset):
-                        print(f"[DEBUG] Dataset ya existe, abortando")
+                        messagebox.showerror(title="Error en la importación del modelo",message=f"El dataset '{os.path.basename(cls.ruta_dataset)}' ya se encuentra registrado en la aplicación. La importación ha sido cancelada.")
                         cls.BANDERA_IMPORTACION = False
                         return
 
@@ -197,10 +185,11 @@ class Configuracionnnunetv2:
                         zip_ref.extractall(cls.PATH_DICT["nnUNet_results"])
                         cls.Configuracion_importacion_modelo_json(name_model)
                     else:
-                        print(f"[DEBUG] Modelo {name_model} ya registrado en JSON")
+                        messagebox.showinfo(title="Error importación del modelo",message=f"El modelo '{name_model}' ya existe en la aplicación. Para volver a importarlo, primero elimine el modelo actual y luego inténtelo nuevamente.")
                         cls.BANDERA_IMPORTACION = False
             else:
-                print(f"[DEBUG] ZIP no encontrado: {path_model}")
+
+                messagebox.showinfo(title="Error importación del modelo",message=f"ZIP no encontrado: {path_model}")
                 cls.BANDERA_IMPORTACION = False
 
         except Exception as e:
@@ -230,7 +219,6 @@ class Configuracionnnunetv2:
 
         ventana.transient(master)
         ventana.protocol("WM_DELETE_WINDOW", lambda: None)
-
         ttk.Label(ventana, text="Importando modelo, por favor espere...").pack(pady=10)
         progreso = ttk.Progressbar(ventana, mode="indeterminate", length=280)
         progreso.pack(pady=5)
@@ -239,7 +227,6 @@ class Configuracionnnunetv2:
         progreso.start(12)
         ventana.grab_set()
         ventana.focus()
-
         hilo = threading.Thread(target=cls.Importacion_modelo, args=(path_model,), daemon=True)
         hilo.start()
         cls.monitorear_importacion(ventana, progreso, hilo, callback, master=master)
