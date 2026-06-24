@@ -82,6 +82,8 @@ class Configuracionnnunetv2:
 
     @classmethod
     def Configuracion_apcivmapcas_json(cls):
+        config_model = {"modelos": {}, "tipo_archivo_ex": "NIfTI", "path_import_imagen": "", "path_import_modelo": "",
+                        "path_export_imagen": "", "modelo_seleccionado": ""}
         try:
             archivojson = cls.BASE_CONFIGURACION
             #os.makedirs(os.path.dirname(archivojson), exist_ok=True)
@@ -90,13 +92,12 @@ class Configuracionnnunetv2:
                     config_model = json.load(archivo_j)
                 return config_model
             else:
-                config_model = {"modelos": {}, "tipo_archivo_ex": "NIfTI", "path_import_imagen": "","path_import_modelo": "",
-                                "path_export_imagen":"","modelo_seleccionado": ""}
                 with open(archivojson, "w") as f:
                     json.dump(config_model, f, indent=4)
                 return config_model
         except Exception as e:
             log.error(f"Error en la configuracion del archivo json:\n{e}")
+            return config_default
 
     @classmethod
     def Configuracion_importacion_modelo_json(cls, name_model: str = ""):
@@ -130,13 +131,11 @@ class Configuracionnnunetv2:
                     with open(archivojson, "w") as f:
                         json.dump(config_model, f, indent=4)
             else:
-                messagebox.showerror(title="Error en la importación del modelo",
-                                     message="Para hacer uso de esta aplicacion debe haber un solo entrenamiento por modelo")
+                messagebox.showerror(title="Error en la importación del modelo",message="Para hacer uso de esta aplicacion debe haber un solo entrenamiento por modelo")
                 cls.BANDERA_IMPORTACION=False
-                shutil.rmtree(self.ruta_dataset)
+                shutil.rmtree(cls.ruta_dataset)
         except Exception as e:
             log.error(f"Error: En la configuracion del modelo {name_model}:\n {e}")
-
     @classmethod
     def Importacion_modelo(cls, path_model: str = "") -> None:
         try:
