@@ -140,17 +140,9 @@ class Configuracionnnunetv2:
     @classmethod
     def Importacion_modelo(cls, path_model: str = "") -> None:
         try:
-            print(f"[DEBUG] Iniciando importación: {path_model}")
             archivojson = cls.BASE_CONFIGURACION
-            print(f"[DEBUG] JSON path: {archivojson}")
-            print(f"[DEBUG] JSON existe: {os.path.exists(archivojson)}")
-            print(f"[DEBUG] JSON tamaño: {os.path.getsize(archivojson)}")
-
             with open(archivojson, "r") as archivo_j:
-                contenido = archivo_j.read()
-                print(f"[DEBUG] JSON contenido raw: '{contenido[:100]}'")
-                config_model = json.loads(contenido)
-
+                config_model = json.load(archivo_j)
             print(f"[DEBUG] JSON cargado OK: {list(config_model.keys())}")
             print(f"[DEBUG] ZIP existe: {os.path.isfile(path_model)}")
 
@@ -176,14 +168,11 @@ class Configuracionnnunetv2:
                         return
 
                     name_model = os.path.basename(path_model).split(".")[0]
-                    print(f"[DEBUG] Nombre modelo: {name_model}")
+
 
                     if name_model not in config_model["modelos"].keys():
-                        print(f"[DEBUG] Extrayendo ZIP en: {cls.PATH_DICT['nnUNet_results']}")
                         zip_ref.extractall(cls.PATH_DICT["nnUNet_results"])
-                        print(f"[DEBUG] Extracción completa, configurando JSON...")
                         cls.Configuracion_importacion_modelo_json(name_model)
-                        print(f"[DEBUG] Todo OK")
                     else:
                         print(f"[DEBUG] Modelo {name_model} ya registrado en JSON")
                         cls.BANDERA_IMPORTACION = False
