@@ -84,7 +84,7 @@ class Configuracionnnunetv2:
     def Configuracion_apcivmapcas_json(cls):
         try:
             archivojson = cls.BASE_CONFIGURACION
-            os.makedirs(os.path.dirname(archivojson), exist_ok=True)
+            #os.makedirs(os.path.dirname(archivojson), exist_ok=True)
             if os.path.exists(archivojson):
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
@@ -149,20 +149,13 @@ class Configuracionnnunetv2:
                 "path_export_imagen": "",
                 "modelo_seleccionado": ""
             }
-            if not os.path.exists(archivojson):
-                os.makedirs(os.path.dirname(archivojson), exist_ok=True)
+            try:
+                with open(archivojson, "r") as archivo_j:
+                    config_model = json.load(archivo_j)
+            except json.JSONDecodeError:
                 with open(archivojson, "w") as f:
                     json.dump(config_default, f, indent=4)
                 config_model = config_default
-            else:
-                try:
-                    with open(archivojson, "r") as archivo_j:
-                        config_model = json.load(archivo_j)
-                except json.JSONDecodeError:
-                    with open(archivojson, "w") as f:
-                        json.dump(config_default, f, indent=4)
-                    config_model = config_default
-
             if os.path.isfile(path_model):
                 with zipfile.ZipFile(path_model, 'r') as zip_ref:
                     nombres = zip_ref.namelist()
@@ -219,6 +212,7 @@ class Configuracionnnunetv2:
 
         ventana.transient(master)
         ventana.protocol("WM_DELETE_WINDOW", lambda: None)
+        ventana.focus()
         ttk.Label(ventana, text="Importando modelo, por favor espere...").pack(pady=10)
         progreso = ttk.Progressbar(ventana, mode="indeterminate", length=280)
         progreso.pack(pady=5)
@@ -227,6 +221,7 @@ class Configuracionnnunetv2:
         progreso.start(12)
         ventana.grab_set()
         ventana.focus()
+
         hilo = threading.Thread(target=cls.Importacion_modelo, args=(path_model,), daemon=True)
         hilo.start()
         cls.monitorear_importacion(ventana, progreso, hilo, callback, master=master)
