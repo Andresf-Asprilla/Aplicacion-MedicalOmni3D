@@ -57,7 +57,6 @@ class Configuracionnnunetv2:
                 print(f"{folder_path} creada correctamente")
 
         except Exception as e:
-            print("ERROR:", repr(e))
             log.critical(
                 f"Error: No se pudieron crear las carpetas:\n{e}"
             )
@@ -88,13 +87,10 @@ class Configuracionnnunetv2:
         try:
             archivojson = cls.BASE_CONFIGURACION
             if os.path.exists(archivojson):
-                print("leyendo json")
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
-                print(config_model)
                 return config_model
             else:
-                print("creando json")
                 with open(archivojson, "w") as f:
                     json.dump(config_model, f, indent=4)
                 return config_model
@@ -188,8 +184,6 @@ class Configuracionnnunetv2:
 
         except Exception as e:
             import traceback
-            print(f"[DEBUG] EXCEPCION: {e}")
-            print(traceback.format_exc())
             log.error(f"Error en la importación del modelo:\n{e}")
             cls.BANDERA_IMPORTACION = False
 
@@ -430,7 +424,26 @@ class Configuracionnnunetv2:
                         os.remove(json_eliminar)
         except Exception as e:
             log.error(f"Error: En la eliminacion de los archivos json:\n{e}")
-
+    @classmethod
+    def Obtencion_plan_modelo(cls,dataset):
+        path=os.path.join(cls.PATH_DICT["nnUNet_results"],dataset)
+        if os.path.exists(path):
+            if len(os.listdir(path))==1:
+                archivo=os.listdir(path)[0]
+                path_json=os.path.join(path,archivo,"plans.json")
+                if os.path.isfile(path_json):
+                    with open(path_json,"r") as plant:
+                        contenido=json.load(plant)
+                    if "plans_name" in contenido.keys():
+                        return contenido["plans_name"]
+                    else:
+                        return None
+                else:
+                    return None
+            else:
+                return None
+        else:
+            return None
     @classmethod
     def Inferencias_modelo_asincrona(cls, modelo_selecionado: str = "", device: str = None):
         try:
@@ -441,21 +454,16 @@ class Configuracionnnunetv2:
                     with open(path_json, "r") as archivo:
                         config = json.load(archivo)
                     inf_model = config["modelos"][modelo_selecionado]
-                    comando = [
-                        "nnUNetv2_predict",
-                        "-d", inf_model["dataset"],
-                        "-i", cls.PATH_DICT["nnUNet_Procesamiento_imagenes"],
-                        "-o", cls.PATH_DICT["nnUNet_Salida_imagenes_modelo"],
-                        "-f", *inf_model["fold"],
-                        "-tr", inf_model["trainer"],
-                        "-c", inf_model["modelo"],
-                        "-device", device,
-                        "-p", "nnUNetPlans"
-                    ]
-                    proceso_gpu = subprocess.Popen(comando)
-                    return proceso_gpu
+                    plant_model=cls.Obtencion_plan_modelo(dataset=inf_model["dataset"])
+                    if plant_model :
+                        comando = ["nnUNetv2_predict","-d", inf_model["dataset"],"-i", cls.PATH_DICT["nnUNet_Procesamiento_imagenes"],"-o", cls.PATH_DICT["nnUNet_Salida_imagenes_modelo"],"-f", *inf_model["fold"],"-tr", inf_model["trainer"],"-c", inf_model["modelo"],"-device", device,"-p",plant_model]
+                        proceso_gpu = subprocess.Popen(comando)
+                        return proceso_gpu
+                    else:
+                        log.critical(f"Error: No se puede ejecutar el modelo")
+                        return None
         except Exception as e:
-            log.critical(f"Error al lanzar el subproceso nnUNet: {e}")
+            log.critical(f"Error: al lanzar el subproceso nnUNet: {e}")
             return None
 
     @classmethod
@@ -467,18 +475,12 @@ class Configuracionnnunetv2:
                     with open(path_json, "r") as archivo:
                         config = json.load(archivo)
                     inf_model = config["modelos"][modelo_selecionado]
-                    comando = [
-                        "nnUNetv2_predict",
-                        "-d", inf_model["dataset"],
-                        "-i", cls.PATH_DICT["nnUNet_Procesamiento_imagenes"],
-                        "-o", cls.PATH_DICT["nnUNet_Salida_imagenes_modelo"],
-                        "-f", *inf_model["fold"],
-                        "-tr", inf_model["trainer"],
-                        "-c", inf_model["modelo"],
-                        "-device", device,
-                        "-p", "nnUNetPlans"
-                    ]
-                    subprocess.run(comando, check=True)
+                    plant_model = cls.Obtencion_plan_modelo(dataset=inf_model["dataset"])
+                    if plant_model:
+                        comando = ["nnUNetv2_predict","-d", inf_model["dataset"],"-i", cls.PATH_DICT["nnUNet_Procesamiento_imagenes"],"-o", cls.PATH_DICT["nnUNet_Salida_imagenes_modelo"],"-f", *inf_model["fold"],"-tr", inf_model["trainer"],"-c", inf_model["modelo"],"-device", device,"-p",plant_model]
+                        subprocess.run(comando, check=True)
+                    else:
+                        log.error("Error: No se puede ejecutar el modelo")
                 else:
                     log.error("Error: Instala un modelo valido de nnUNet")
             else:

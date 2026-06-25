@@ -41,7 +41,6 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.withdraw()
         Configuracionnnunetv2.Creacion_variables_entorno()
         self.configuracion_sistema=Configuracionnnunetv2.Configuracion_apcivmapcas_json()
-        print(self.configuracion_sistema)
         self.dispositivo = Configuracionnnunetv2.Dispositivo_inferencia()
         name_modelo=self.configuracion_sistema["modelo_seleccionado"]
         self.dispositivo_selecionado = self.configuracion_sistema["modelos"][name_modelo]["device"] if self.configuracion_sistema["modelo_seleccionado"]!="" else "cpu"
