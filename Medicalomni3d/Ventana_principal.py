@@ -651,11 +651,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Eliminar_usuario(self,event):
         lista_usuarios=self.tabla_usuarios.selection()
         if lista_usuarios:
-            contador_admin=0
-            for usuarios in self.tabla_usuarios.get_children():
-                if self.tabla_usuarios.item(usuarios)['values'][2] == "Administrador":
-                    contador_admin+=1
-            if not (contador_admin==1 and self.tabla_usuarios.item(lista_usuarios[0])['values'][2]=="Administrador"):
+            if not (len(self.tabla_usuarios.get_children())==1 and self.tabla_usuarios.item(self.tabla_usuarios.selection()[0])['values'][2] == "Administrador"):
                 usuario=Usuario(id_usuario=self.tabla_usuarios.item(lista_usuarios[0])['values'][0],username=self.tabla_usuarios.item(lista_usuarios[0])['values'][1])
                 respuesta = messagebox.askyesno(title="Eliminar usuario",message=f"¿Está seguro de que desea eliminar el siguiente usuario?\n\nUsuario: {usuario.username}")
                 if respuesta:
@@ -789,7 +785,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Guardar_usuario(self,event):
         if re.match(self.email_pattern,self.correo_nuevo_usuario.get().lower()):
             if re.match(self.password_pattern,self.contrasena_nuevo_usuario.get()):
-                usuario_nuevo = Usuario(username=self.correo_nuevo_usuario.get(), password=self.contrasena_nuevo_usuario.get(),rol=self.Rol_nuevo_usuario.get(), bloqueado=self.Estado_nuevo_usuario.get())
+                usuario_nuevo = Usuario(username=self.correo_nuevo_usuario.get().lower(), password=self.contrasena_nuevo_usuario.get(),rol=self.Rol_nuevo_usuario.get(), bloqueado=self.Estado_nuevo_usuario.get())
                 respuesta = messagebox.askyesno(
                     title="Nuevo usuario",
                     message=(
@@ -870,7 +866,11 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.correo_editar_usuario.insert(0,string=self.usuario_editar.username)
         self.Rol_editar_usuario = ttk.Combobox(frame_principal,values=Usuario.Rol,width=32,state="readonly")
         self.Estado_editar_usuario = ttk.Combobox(frame_principal,values=Usuario.Estado,width=32,state="readonly")
-        self.Rol_editar_usuario.set(value=self.usuario_editar.rol)
+        if len(self.tabla_usuarios.get_children())==1 and self.tabla_usuarios.item(self.tabla_usuarios.selection()[0])['values'][2] == "Administrador":
+            self.Rol_editar_usuario.set(value=self.usuario_editar.rol)
+            self.Rol_editar_usuario.configure(state=tk.DISABLED)
+        else:
+            self.Rol_editar_usuario.set(value=self.usuario_editar.rol)
         self.Estado_editar_usuario.set(value=self.usuario_editar.bloqueado)
         self.correo_editar_usuario.grid(row=1, column=1, sticky=tk.W, pady=10)
         self.Rol_editar_usuario.grid(row=2, column=1, sticky=tk.W, pady=10)

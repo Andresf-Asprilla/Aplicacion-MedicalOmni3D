@@ -51,7 +51,6 @@ class DAOMedicalOmni3D:
             if not usuarios:
                 user = Usuario(username="admin@medicalomni3d.com",password="Admin123*",rol="Administrador",intentos_fallidos=0,bloqueado=0)
                 DAOMedicalOmni3D.Insertar_usuario(user)
-
         except Exception as e:
             log.error(f"Error al crear el usuario administrador por defecto:\n{e}")
 
