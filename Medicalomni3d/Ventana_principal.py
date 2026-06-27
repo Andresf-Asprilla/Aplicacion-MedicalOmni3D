@@ -112,9 +112,17 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
     def Configuracion_ventana_principal_MedicalOmni3d(self):
         self.title("MedicalOmni3D")
-        if platform.system() == "Windows":
+        sistema = platform.system()
+        if sistema == "Windows":
             self.iconbitmap(self.icono_app)
             self.state("zoomed")
+
+        elif sistema == 'Darwin':
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            self.iconphoto(True, icon_photo)
+            self.attributes('-fullscreen', False)
+            self.wm_state('zoomed')
         else:
             icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
             icon_photo = ImageTk.PhotoImage(icon_img)
