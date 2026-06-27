@@ -850,9 +850,16 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
     def Ventana_editar_usuario(self):
         self.ventana_editar = tk.Toplevel(self)
-        Configuracion_ventana(ventana=self.ventana_editar,ancho=600,alto=450,titulo="Nuevo usuario",no_modificar=True)
-        if platform.system() == "Windows":
+        Configuracion_ventana(ventana=self.ventana_editar,ancho=600,alto=450,titulo="Editar usuario",no_modificar=True)
+        sistema = platform.system()
+        if sistema == "Windows":
             self.ventana_editar.iconbitmap(self.icono_app)
+
+        elif sistema == 'Darwin':
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            self.ventana_editar.iconphoto(True, icon_photo)
+
         else:
             icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
             icon_photo = ImageTk.PhotoImage(icon_img)
@@ -906,8 +913,14 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Ventana_creacion_usuario(self,event):
         self.ventana = tk.Toplevel(self)
         Configuracion_ventana(ventana=self.ventana,ancho=600,alto=450,titulo="Nuevo usuario",no_modificar=True)
-        if platform.system() == "Windows":
+        sistema = platform.system()
+        if sistema == "Windows":
             self.ventana.iconbitmap(self.icono_app)
+
+        elif sistema == 'Darwin':
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            self.ventana.iconphoto(True, icon_photo)
         else:
             icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
             icon_photo = ImageTk.PhotoImage(icon_img)
@@ -1107,12 +1120,20 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Confirmar_salida(self):
         ventana = tk.Toplevel(self)
         Configuracion_ventana(ventana=ventana,ancho=300,alto=120,titulo="Confirmar salida",no_modificar=True)
-        if platform.system() == "Windows":
+        sistema = platform.system()
+        if sistema == "Windows":
             ventana.iconbitmap(self.icono_app)
+
+        elif sistema == 'Darwin':
+            icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+            icon_photo = ImageTk.PhotoImage(icon_img)
+            ventana.iconphoto(True, icon_photo)
+
         else:
             icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
             icon_photo = ImageTk.PhotoImage(icon_img)
             ventana.iconphoto(True, icon_photo)
+
         ventana.transient(self)
         ventana.focus_force()
         ventana.grab_set()
