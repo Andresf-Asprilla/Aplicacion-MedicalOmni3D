@@ -1162,7 +1162,12 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
     def Almacenamiento_imagenes(self, evento):
         try:
-            tipos = [("Imágenes Médicas (NIfTI / Standard)", (".nii.gz",))]
+            sistema = platform.system()
+            if sistema=='Darwin':
+                tipos = [("Imágenes Médicas (NIfTI)", "*.nii.gz"), ]
+            else:
+                tipos = [("Imágenes Médicas (NIfTI / Standard)", (".nii.gz",))]
+
             if self.configuracion_sistema["path_import_imagen"] !="":
                 with open(self.archivojson, "r") as archivojson:
                     self.configuracion_sistema=json.load(archivojson)
