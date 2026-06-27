@@ -1163,38 +1163,62 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Almacenamiento_imagenes(self, evento):
         try:
             sistema = platform.system()
-            if sistema=='Darwin':
-                tipos = [("Imágenes Médicas (NIfTI)", "*.nii.gz"), ]
+
+            if sistema == 'Darwin':
+                rutas_raw = filedialog.askopenfiles(
+                    title="Seleccione las imágenes para importar (.nii.gz)",
+                    initialdir=self.configuracion_sistema["path_import_imagen"]
+                    if self.configuracion_sistema["path_import_imagen"] != ""
+                    else os.path.expanduser("~")
+                )
+                rutas = [r for r in rutas_raw if r.name.endswith('.nii.gz')] if rutas_raw else []
+                if rutas_raw and not rutas:
+                    messagebox.showwarning(
+                        title="Advertencia",
+                        message="Ningún archivo seleccionado tiene extensión .nii.gz válida."
+                    )
+                    self.frame_botones.focus()
+                    return
             else:
                 tipos = [("Imágenes Médicas (NIfTI / Standard)", (".nii.gz",))]
+                if self.configuracion_sistema["path_import_imagen"] != "":
+                    with open(self.archivojson, "r") as archivojson:
+                        self.configuracion_sistema = json.load(archivojson)
+                    initialdir = self.configuracion_sistema["path_import_imagen"]
+                else:
+                    initialdir = os.path.expanduser("~")
 
-            if self.configuracion_sistema["path_import_imagen"] !="":
-                with open(self.archivojson, "r") as archivojson:
-                    self.configuracion_sistema=json.load(archivojson)
-                initialdir=self.configuracion_sistema["path_import_imagen"]
-            else:
-                initialdir = os.path.expanduser("~")
+                rutas = filedialog.askopenfiles(
+                    title="Seleccione las imágenes para importar",
+                    initialdir=initialdir,
+                    filetypes=tipos
+                )
 
-            rutas=filedialog.askopenfiles(title="Seleccione las imágenes para importar",initialdir=initialdir,filetypes=tipos)
             if rutas:
-                self.configuracion_sistema["path_import_imagen"]=os.path.dirname(rutas[0].name)
+                self.configuracion_sistema["path_import_imagen"] = os.path.dirname(rutas[0].name)
                 with open(self.archivojson, "w") as f:
                     json.dump(self.configuracion_sistema, f, indent=4)
-                listado_imagnes_importadas=[]
+
+                listado_imagnes_importadas = []
                 for ruta_imagen in rutas:
                     shutil.copy(ruta_imagen.name, Configuracionnnunetv2.PATH_DICT["nnUNet_Almacenamiento_imagenes"])
-                    nombre_imagen=os.path.basename(ruta_imagen.name).split(".")[0]
+                    nombre_imagen = os.path.basename(ruta_imagen.name).split(".")[0]
                     texto = f"{self.usuario.ACCIONES[3]}: {nombre_imagen}"
-                    DAOMedicalOmni3D.Insertar_registro_intento(self.usuario,texto)
+                    DAOMedicalOmni3D.Insertar_registro_intento(self.usuario, texto)
                     Configuracionnnunetv2.Cifrar_imagenes(path_imagen=ruta_imagen.name)
                     listado_imagnes_importadas.append(nombre_imagen)
-                nombres_imagenes=",".join(listado_imagnes_importadas)
+
+                nombres_imagenes = ",".join(listado_imagnes_importadas)
                 self.Cargar_imagenes()
-                messagebox.showinfo(title="Importación imagenes",message=f"Se importaron correctamente las siguientes imágenes: {nombres_imagenes} ")
+                messagebox.showinfo(
+                    title="Importación imagenes",
+                    message=f"Se importaron correctamente las siguientes imágenes: {nombres_imagenes}"
+                )
+
             self.frame_botones.focus()
+
         except Exception as e:
             log.error(f"Error al importar las imagenes:\n{e}")
-
 if __name__=="__main__":
     usuario=Usuario(id_usuario=4,username="andresf@gmial.com",password="12345",rol="admin",intentos_fallidos=0,bloqueado=0)
     user=Usuario(id_usuario=1, username="felipe14@gmail.com", password="12345", rol="Administrador", intentos_fallidos=0, bloqueado=0)
