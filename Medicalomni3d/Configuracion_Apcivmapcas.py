@@ -115,25 +115,67 @@ class Configuracionnnunetv2:
                 for fold in os.listdir(os.path.join(carpeta_dataset, ruta_modelo3)):
                     if fold.startswith("fold") and fold.split("_")[-1].isdigit():
                         fold_modelo.append(fold.split("_")[-1])
+
                 if not fold_modelo:
-                    messagebox.showerror(title="Error en la importación del modelo",
-                                         message="No se encontraron los archivos fold en el modelo")
+                    messagebox.showerror(
+                        title="Error en la importación del modelo",
+                        message="No se encontraron los archivos fold en el modelo"
+                    )
                     shutil.rmtree(cls.ruta_dataset)
-                    cls.BANDERA_IMPORTACION=False
+                    cls.BANDERA_IMPORTACION = False
                 else:
                     archivojson = cls.BASE_CONFIGURACION
+                    config_default = {
+                        "modelos": {},
+                        "tipo_archivo_ex": "NIfTI",
+                        "path_import_imagen": "",
+                        "path_import_modelo": "",
+                        "path_export_imagen": "",
+                        "modelo_seleccionado": ""
+                    }
+
                     if os.path.exists(archivojson):
-                        with open(archivojson, "r") as archivo_j:
-                            config_model = json.load(archivo_j)
-                    config_model["modelos"][name_model] = {"dataset": os.path.basename(carpeta_dataset),"trainer": entrenamiento_model,"modelo": tipo_modelo,"fold": fold_modelo,"path_desinstalar": carpeta_dataset,"Normalizacion": True, "Espaciado": True,"nuevo_espaciado": [1, 1, 1], "device": cls.Dispositivo_inferencia()[0]}
+                        try:
+                            with open(archivojson, "r") as archivo_j:
+                                config_model = json.load(archivo_j)
+                            if "modelos" not in config_model:
+                                config_model["modelos"] = {}
+                        except (json.JSONDecodeError, Exception) as e:
+                            log.error(f"JSON corrupto, usando configuración por defecto: {e}")
+                            config_model = config_default
+                    else:
+                        config_model = config_default
+
+                    config_model["modelos"][name_model] = {
+                        "dataset": os.path.basename(carpeta_dataset),
+                        "trainer": entrenamiento_model,
+                        "modelo": tipo_modelo,
+                        "fold": fold_modelo,
+                        "path_desinstalar": carpeta_dataset,
+                        "Normalizacion": True,
+                        "Espaciado": True,
+                        "nuevo_espaciado": [1, 1, 1],
+                        "device": cls.Dispositivo_inferencia()[0]
+                    }
+
                     with open(archivojson, "w") as f:
                         json.dump(config_model, f, indent=4)
+                        f.flush()
+                        os.fsync(f.fileno())
+
+                    log.info(f"Modelo '{name_model}' guardado correctamente en JSON")
+
             else:
-                messagebox.showerror(title="Error en la importación del modelo",message="Para hacer uso de esta aplicacion debe haber un solo entrenamiento por modelo")
-                cls.BANDERA_IMPORTACION=False
+                messagebox.showerror(
+                    title="Error en la importación del modelo",
+                    message="Para hacer uso de esta aplicacion debe haber un solo entrenamiento por modelo"
+                )
+                cls.BANDERA_IMPORTACION = False
                 shutil.rmtree(cls.ruta_dataset)
+
         except Exception as e:
             log.error(f"Error: En la configuracion del modelo {name_model}:\n {e}")
+            cls.BANDERA_IMPORTACION = False
     @classmethod
     def Importacion_modelo(cls, path_model: str = "") -> None:
         try:

@@ -41,6 +41,13 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.withdraw()
         Configuracionnnunetv2.Creacion_variables_entorno()
         self.configuracion_sistema=Configuracionnnunetv2.Configuracion_apcivmapcas_json()
+        if self.configuracion_sistema is None:
+            try:
+                with open(Configuracionnnunetv2.BASE_CONFIGURACION, "r") as f:
+                    self.configuracion_sistema = json.load(f)
+            except Exception as e:
+                log.error(f"Error crítico al cargar configuración: {e}")
+                self.configuracion_sistema = {}
         self.dispositivo = Configuracionnnunetv2.Dispositivo_inferencia()
         name_modelo=self.configuracion_sistema["modelo_seleccionado"]
         self.dispositivo_selecionado = self.configuracion_sistema["modelos"][name_modelo]["device"] if self.configuracion_sistema["modelo_seleccionado"]!="" else "cpu"
@@ -403,16 +410,34 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.botones_exportacion_imagenes()
 
     def botones_exportacion_imagenes(self):
-        self.frame_botones_extesion = ttk.Frame(self.frame_botones,style="Page.TFrame")
-        self.frame_botones_extesion.grid(row=0, column=2,sticky=tk.EW,padx=5,pady=5)
-        self.variable_extension = tk.StringVar(value=self.configuracion_sistema["tipo_archivo_ex"])
-        for i, extension in enumerate(Configuracionnnunetv2.TIPO_EXTENSION.keys() ):
+
+        if self.configuracion_sistema is None:
+            try:
+                with open(self.archivojson, "r") as f:
+                    self.configuracion_sistema = json.load(f)
+            except Exception as e:
+                log.error(f"Error al recargar configuración en botones_exportacion: {e}")
+                return
+
+        self.frame_botones_extesion = ttk.Frame(self.frame_botones, style="Page.TFrame")
+        self.frame_botones_extesion.grid(row=0, column=2, sticky=tk.EW, padx=5, pady=5)
+        self.variable_extension = tk.StringVar(
+            value=self.configuracion_sistema.get("tipo_archivo_ex", "")  # ✅ .get() con fallback
+        )
+        for i, extension in enumerate(Configuracionnnunetv2.TIPO_EXTENSION.keys()):
             fila = i // 2
             columna = i % 2
-            boton = ttk.Radiobutton(self.frame_botones_extesion,text=extension,variable=self.variable_extension,value=extension,cursor="hand2",command=lambda :self.Cargar_extension(evento=None))
+            boton = ttk.Radiobutton(
+                self.frame_botones_extesion,
+                text=extension,
+                variable=self.variable_extension,
+                value=extension,
+                cursor="hand2",
+                command=lambda: self.Cargar_extension(evento=None)
+            )
             boton.bind("<space>", self.Cargar_extension)
             boton.bind("<Return>", self.Cargar_extension)
-            boton.grid(row=fila,column=columna,padx=2,pady=2,sticky="w")
+            boton.grid(row=fila, column=columna, padx=2, pady=2, sticky="w")
 
     def exportar_imagen(self,evento):
         try:
@@ -487,14 +512,21 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
             log.error(f"Error al importar modelo:\n{e}")
 
     def actualizar_modelos(self):
-        self.configuracion_sistema = Configuracionnnunetv2.Configuracion_apcivmapcas_json()
+        try:
+            with open(self.archivojson, "r") as f:
+                self.configuracion_sistema = json.load(f)
+        except Exception as e:
+            log.error(f"Error al recargar configuración tras importar modelo: {e}")
+            return
         self.Cargar_modelos()
-        if len(self.eleccion_modelos) > 0:
+        if self.eleccion_modelos and len(self.eleccion_modelos) > 0:
             self.boton_modelos_configuracion.config(values=self.eleccion_modelos)
-            if self.configuracion_sistema["modelo_seleccionado"] != "":
-                self.boton_modelos_configuracion.set(self.configuracion_sistema["modelo_seleccionado"])
+            modelo_actual = self.configuracion_sistema.get("modelo_seleccionado", "")
+            if modelo_actual != "" and modelo_actual in self.eleccion_modelos:
+                self.boton_modelos_configuracion.set(modelo_actual)
             else:
                 self.boton_modelos_configuracion.current(0)
+                self.Seleccion_modelos(event=None)
 
     def guardar_configuracion_sistema(self,event):
         respuesta = messagebox.askyesno(title="Guardar configuración del sistema",message="¿Desea guardar los cambios realizados en la configuración del sistema?")
@@ -1162,14 +1194,19 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
     def Almacenamiento_imagenes(self, evento):
         try:
+            # ✅ Siempre recargar desde disco al inicio para garantizar estado fresco
+            with open(self.archivojson, "r") as f:
+                self.configuracion_sistema = json.load(f)
+
             sistema = platform.system()
+            initialdir = (
+                    self.configuracion_sistema.get("path_import_imagen") or os.path.expanduser("~")
+            )
 
             if sistema == 'Darwin':
                 rutas_raw = filedialog.askopenfiles(
                     title="Seleccione las imágenes para importar (.nii.gz)",
-                    initialdir=self.configuracion_sistema["path_import_imagen"]
-                    if self.configuracion_sistema["path_import_imagen"] != ""
-                    else os.path.expanduser("~")
+                    initialdir=initialdir
                 )
                 rutas = [r for r in rutas_raw if r.name.endswith('.nii.gz')] if rutas_raw else []
                 if rutas_raw and not rutas:
@@ -1181,13 +1218,6 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
                     return
             else:
                 tipos = [("Imágenes Médicas (NIfTI / Standard)", (".nii.gz",))]
-                if self.configuracion_sistema["path_import_imagen"] != "":
-                    with open(self.archivojson, "r") as archivojson:
-                        self.configuracion_sistema = json.load(archivojson)
-                    initialdir = self.configuracion_sistema["path_import_imagen"]
-                else:
-                    initialdir = os.path.expanduser("~")
-
                 rutas = filedialog.askopenfiles(
                     title="Seleccione las imágenes para importar",
                     initialdir=initialdir,
