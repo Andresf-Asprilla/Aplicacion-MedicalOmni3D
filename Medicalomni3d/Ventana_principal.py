@@ -42,6 +42,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         Configuracionnnunetv2.Creacion_variables_entorno()
         self.configuracion_sistema=Configuracionnnunetv2.Configuracion_apcivmapcas_json()
         self.dispositivo = Configuracionnnunetv2.Dispositivo_inferencia()
+        print(self.configuracion_sistema,self.configuracion_sistema.keys())
         name_modelo=self.configuracion_sistema["modelo_seleccionado"]
         self.dispositivo_selecionado = self.configuracion_sistema["modelos"][name_modelo]["device"] if self.configuracion_sistema["modelo_seleccionado"]!="" else "cpu"
         self.archivojson = Configuracionnnunetv2.BASE_CONFIGURACION
