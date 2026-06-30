@@ -142,12 +142,12 @@ class Configuracionnnunetv2:
                             if "modelos" not in config_model:
                                 config_model["modelos"] = {}
                         except (json.JSONDecodeError, Exception) as e:
-                            print("archivo corrupto no se porque")
+                            print(f"archivo corrupto no se porque:{e}")
                             log.error(f"JSON corrupto, usando configuración por defecto: {e}")
                             config_model = config_default
                     else:
                         config_model = config_default
-                    print("se agrega informacion")
+                    print("se agrega informacion",config_model)
                     config_model["modelos"][name_model] = {
                         "dataset": os.path.basename(carpeta_dataset),
                         "trainer": entrenamiento_model,
