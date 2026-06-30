@@ -107,7 +107,7 @@ class Configuracionnnunetv2:
                 if not archivo.endswith(".json")
             ]
             carpeta_dataset = max(archivos, key=os.path.getmtime)
-
+            print(carpeta_dataset,"importada")
             if len(os.listdir(carpeta_dataset)) == 1:
                 ruta_modelo3 = os.listdir(carpeta_dataset)[0]
                 entrenamiento_model, _, tipo_modelo = ruta_modelo3.split("__")
@@ -135,17 +135,19 @@ class Configuracionnnunetv2:
                     }
 
                     if os.path.exists(archivojson):
+
                         try:
                             with open(archivojson, "r") as archivo_j:
                                 config_model = json.load(archivo_j)
                             if "modelos" not in config_model:
                                 config_model["modelos"] = {}
                         except (json.JSONDecodeError, Exception) as e:
+                            print("archivo corrupto no se porque")
                             log.error(f"JSON corrupto, usando configuración por defecto: {e}")
                             config_model = config_default
                     else:
                         config_model = config_default
-
+                    print("se agrega informacion")
                     config_model["modelos"][name_model] = {
                         "dataset": os.path.basename(carpeta_dataset),
                         "trainer": entrenamiento_model,
@@ -188,6 +190,7 @@ class Configuracionnnunetv2:
                 "path_export_imagen": "",
                 "modelo_seleccionado": ""
             }
+            print(config_default,"por defecto inicia")
             try:
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
@@ -196,6 +199,8 @@ class Configuracionnnunetv2:
                 with open(archivojson, "w") as f:
                     json.dump(config_default, f, indent=4)
                 config_model = config_default
+                print(config_model,"no se que pasa")
+
             if os.path.isfile(path_model):
                 with zipfile.ZipFile(path_model, 'r') as zip_ref:
                     nombres = zip_ref.namelist()
