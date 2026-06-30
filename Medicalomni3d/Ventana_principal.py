@@ -415,7 +415,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.frame_botones_extesion = ttk.Frame(self.frame_botones, style="Page.TFrame")
         self.frame_botones_extesion.grid(row=0, column=2, sticky=tk.EW, padx=5, pady=5)
         self.variable_extension = tk.StringVar(
-            value=self.configuracion_sistema.get("tipo_archivo_ex", "")  # ✅ .get() con fallback
+            value=self.configuracion_sistema.get("tipo_archivo_ex", "")
         )
         for i, extension in enumerate(Configuracionnnunetv2.TIPO_EXTENSION.keys()):
             fila = i // 2
@@ -1190,7 +1190,6 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
     def Almacenamiento_imagenes(self, evento):
         try:
-            # ✅ Siempre recargar desde disco al inicio para garantizar estado fresco
             with open(self.archivojson, "r") as f:
                 self.configuracion_sistema = json.load(f)
 

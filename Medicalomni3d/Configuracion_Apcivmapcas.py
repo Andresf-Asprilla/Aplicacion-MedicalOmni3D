@@ -82,8 +82,6 @@ class Configuracionnnunetv2:
 
     @classmethod
     def Configuracion_apcivmapcas_json(cls):
-        config_model = {"modelos": {}, "tipo_archivo_ex": "NIfTI", "path_import_imagen": "", "path_import_modelo": "",
-                        "path_export_imagen": "", "modelo_seleccionado": ""}
         try:
             archivojson = cls.BASE_CONFIGURACION
             if os.path.exists(archivojson):
@@ -91,7 +89,9 @@ class Configuracionnnunetv2:
                     config_model = json.load(archivo_j)
                 return config_model
             else:
-                print("creando archivo")
+                config_model = {"modelos": {}, "tipo_archivo_ex": "NIfTI", "path_import_imagen": "",
+                                "path_import_modelo": "",
+                                "path_export_imagen": "", "modelo_seleccionado": ""}
                 with open(archivojson, "w") as f:
                     json.dump(config_model, f, indent=4)
                 return config_model
@@ -159,9 +159,22 @@ class Configuracionnnunetv2:
                         "nuevo_espaciado": [1, 1, 1],
                         "device": cls.Dispositivo_inferencia()[0]
                     }
-                    print(config_model,"dentro del importacion_modelo_json")
-                    with open(archivojson, "w") as f:
+                    #print(config_model,"dentro del importacion_modelo_json")
+                    #with open(archivojson, "w") as f:
+                        #json.dump(config_model, f, indent=4)
+                        #f.flush()
+                        #os.fsync(f.fileno())
+
+                    print("Antes de guardar:")
+                    print(config_model)
+                    with open(archivojson, "w", encoding="utf-8") as f:
                         json.dump(config_model, f, indent=4)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    with open(archivojson, "r", encoding="utf-8") as f:
+                        print("Después de guardar:")
+                        print(f.read())
+
                     log.info(f"Modelo '{name_model}' guardado correctamente en JSON")
 
             else:
