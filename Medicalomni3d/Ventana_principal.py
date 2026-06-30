@@ -41,13 +41,6 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.withdraw()
         Configuracionnnunetv2.Creacion_variables_entorno()
         self.configuracion_sistema=Configuracionnnunetv2.Configuracion_apcivmapcas_json()
-        if self.configuracion_sistema is None:
-            try:
-                with open(Configuracionnnunetv2.BASE_CONFIGURACION, "r") as f:
-                    self.configuracion_sistema = json.load(f)
-            except Exception as e:
-                log.error(f"Error crítico al cargar configuración: {e}")
-                self.configuracion_sistema = {}
         self.dispositivo = Configuracionnnunetv2.Dispositivo_inferencia()
         name_modelo=self.configuracion_sistema["modelo_seleccionado"]
         self.dispositivo_selecionado = self.configuracion_sistema["modelos"][name_modelo]["device"] if self.configuracion_sistema["modelo_seleccionado"]!="" else "cpu"
