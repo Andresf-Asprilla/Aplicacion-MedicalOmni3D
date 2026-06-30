@@ -507,6 +507,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
                 self.configuracion_sistema["path_import_modelo"] = os.path.dirname(ruta.name)
                 with open(self.archivojson, "w") as f:
                     json.dump(self.configuracion_sistema, f, indent=4)
+            print(self.configuracion_sistema,"ventana principal")
             self.frame_immportacion_modelo.focus()
         except Exception as e:
             log.error(f"Error al importar modelo:\n{e}")
@@ -515,10 +516,12 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         try:
             with open(self.archivojson, "r") as f:
                 self.configuracion_sistema = json.load(f)
+            print(self.configuracion_sistema)
         except Exception as e:
             log.error(f"Error al recargar configuración tras importar modelo: {e}")
             return
         self.Cargar_modelos()
+
         if self.eleccion_modelos and len(self.eleccion_modelos) > 0:
             self.boton_modelos_configuracion.config(values=self.eleccion_modelos)
             modelo_actual = self.configuracion_sistema.get("modelo_seleccionado", "")

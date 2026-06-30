@@ -157,7 +157,7 @@ class Configuracionnnunetv2:
                         "nuevo_espaciado": [1, 1, 1],
                         "device": cls.Dispositivo_inferencia()[0]
                     }
-
+                    print(config_model,"dentro del importacion_modelo_json")
                     with open(archivojson, "w") as f:
                         json.dump(config_model, f, indent=4)
                         f.flush()
@@ -191,6 +191,7 @@ class Configuracionnnunetv2:
             try:
                 with open(archivojson, "r") as archivo_j:
                     config_model = json.load(archivo_j)
+                print(config_model,"importar modelo ")
             except json.JSONDecodeError:
                 with open(archivojson, "w") as f:
                     json.dump(config_default, f, indent=4)
