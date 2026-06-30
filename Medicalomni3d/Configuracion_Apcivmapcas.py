@@ -147,6 +147,8 @@ class Configuracionnnunetv2:
                             config_model = config_default
                     else:
                         config_model = config_default
+                    dispositivo = cls.Dispositivo_inferencia()
+                    print("dispositivo detectado:", dispositivo)
                     print("se agrega informacion",config_model)
                     config_model["modelos"][name_model] = {
                         "dataset": os.path.basename(carpeta_dataset),
@@ -157,7 +159,7 @@ class Configuracionnnunetv2:
                         "Normalizacion": True,
                         "Espaciado": True,
                         "nuevo_espaciado": [1, 1, 1],
-                        "device": cls.Dispositivo_inferencia()[0]
+                        "device": dispositivo[0] if dispositivo else "cpu"
                     }
                     #print(config_model,"dentro del importacion_modelo_json")
                     #with open(archivojson, "w") as f:
@@ -186,6 +188,7 @@ class Configuracionnnunetv2:
                 shutil.rmtree(cls.ruta_dataset)
 
         except Exception as e:
+            print(e)
             log.error(f"Error: En la configuracion del modelo {name_model}:\n {e}")
             cls.BANDERA_IMPORTACION = False
 
