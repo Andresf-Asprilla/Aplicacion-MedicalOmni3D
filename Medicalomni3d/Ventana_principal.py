@@ -42,7 +42,6 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         Configuracionnnunetv2.Creacion_variables_entorno()
         self.configuracion_sistema=Configuracionnnunetv2.Configuracion_apcivmapcas_json()
         self.dispositivo = Configuracionnnunetv2.Dispositivo_inferencia()
-        print(self.configuracion_sistema,self.configuracion_sistema.keys())
         name_modelo=self.configuracion_sistema["modelo_seleccionado"]
         self.dispositivo_selecionado = self.configuracion_sistema["modelos"][name_modelo]["device"] if self.configuracion_sistema["modelo_seleccionado"]!="" else "cpu"
         self.archivojson = Configuracionnnunetv2.BASE_CONFIGURACION
@@ -499,10 +498,10 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
             if ruta:
                 Configuracionnnunetv2.ventana_importar_modelo(master=self, path_model=ruta.name,callback=self.actualizar_modelos)
                 self.configuracion_sistema["path_import_modelo"] = os.path.dirname(ruta.name)
-                with open(self.archivojson, "w") as f:
-                    json.dump(self.configuracion_sistema, f, indent=4)
-            print(self.configuracion_sistema,"ventana principal")
-            self.frame_immportacion_modelo.focus()
+                #with open(self.archivojson, "w") as f:
+                    #json.dump(self.configuracion_sistema, f, indent=4)
+                print(self.configuracion_sistema,"ventana principal")
+                self.frame_immportacion_modelo.focus()
         except Exception as e:
             log.error(f"Error al importar modelo:\n{e}")
 
@@ -510,7 +509,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         try:
             with open(self.archivojson, "r") as f:
                 self.configuracion_sistema = json.load(f)
-            print(self.configuracion_sistema)
+            print(self.configuracion_sistema,"actualizar sistema")
         except Exception as e:
             log.error(f"Error al recargar configuración tras importar modelo: {e}")
             return

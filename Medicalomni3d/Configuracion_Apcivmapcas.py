@@ -162,9 +162,6 @@ class Configuracionnnunetv2:
                     print(config_model,"dentro del importacion_modelo_json")
                     with open(archivojson, "w") as f:
                         json.dump(config_model, f, indent=4)
-                        f.flush()
-                        os.fsync(f.fileno())
-
                     log.info(f"Modelo '{name_model}' guardado correctamente en JSON")
 
             else:
