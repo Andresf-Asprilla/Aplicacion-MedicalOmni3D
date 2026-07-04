@@ -1,6 +1,14 @@
 from tkinter import ttk
 import tkinter as tk
 from PIL import  ImageTk,Image
+import sys,os
+
+def resource_path(relative_path: str) -> str:
+    if getattr(sys, "frozen", False):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, "Assets", relative_path)
 
 def Configuracion_ventana(ventana,ancho:int = 800,alto:int = 600,titulo:str="MedicalOmni3D",no_modificar:bool=False):
     ventana.title(titulo)
@@ -39,6 +47,9 @@ def Estilos():
     estilo.configure("Page_botones.TFrame",background="#C7C7C7",borderwidth=5,relief=tk.SOLID)
     estilo.configure("Page_configuracion_banco.TFrame", background="#C7C7C7", borderwidth=5, relief=tk.FLAT)
     estilo.configure("Page_uausarios_banco.TFrame", background="#C7C7C7", borderwidth=10, relief=tk.SUNKEN)
+
+
+
 
 def Leer_imagenes(paht:str=None,zise:tuple=None):
     if zise is None:

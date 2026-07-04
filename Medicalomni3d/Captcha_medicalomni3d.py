@@ -11,13 +11,7 @@ from  matplotlib.image import imread
 class CaptchaMedicalOmni3D:
     LONGITUD=6
     BASE_DIR_CAPTCHA=os.path.join(Configuracionnnunetv2.BASE_DIR,"captcha.png")
-    FUENTES = font_manager.findSystemFonts()
-    MINIMO_REQUERIDO = 5
-    if len(FUENTES) >= MINIMO_REQUERIDO:
-        FUENTES= FUENTES[:MINIMO_REQUERIDO]
-    else:
-        ruta_segura = font_manager.findfont(font_manager.FontProperties(family='sans serif'))
-        FUENTES = [ruta_segura]
+    FUENTES = [font_manager.findfont(font_manager.FontProperties(family="DejaVu Sans")),font_manager.findfont(font_manager.FontProperties(family="DejaVu Serif")),font_manager.findfont(font_manager.FontProperties(family="DejaVu Sans Mono"))]
     @classmethod
     def Generar_texto(cls):
         caracteres = string.ascii_lowercase + string.digits

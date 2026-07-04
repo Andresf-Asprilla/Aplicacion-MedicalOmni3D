@@ -1,16 +1,15 @@
-import os, sys, threading, subprocess,torch, requests, time, zipfile, shutil, platform,keyring
+import os, sys, threading,multiprocessing,torch, requests, time, zipfile, shutil, platform,keyring
 from tkinter import ttk,messagebox
 import nibabel as nib
 from Medicalomni3d.loggin_MedicalOmni3d import  log
 from cryptography.fernet import Fernet
-from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana
+from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana, resource_path
 import tkinter as tk
 from platformdirs import PlatformDirs
 import SimpleITK as sitk
 import numpy as np
 import json
-
-basedir = os.path.dirname(__file__)
+from nnunetv2.inference.predict_from_raw_data import predict_entry_point
 
 
 class Configuracionnnunetv2:
@@ -107,7 +106,6 @@ class Configuracionnnunetv2:
                 if not archivo.endswith(".json")
             ]
             carpeta_dataset = max(archivos, key=os.path.getmtime)
-            print(carpeta_dataset,"importada")
             if len(os.listdir(carpeta_dataset)) == 1:
                 ruta_modelo3 = os.listdir(carpeta_dataset)[0]
                 entrenamiento_model, _, tipo_modelo = ruta_modelo3.split("__")
@@ -142,14 +140,11 @@ class Configuracionnnunetv2:
                             if "modelos" not in config_model:
                                 config_model["modelos"] = {}
                         except (json.JSONDecodeError, Exception) as e:
-                            print(f"archivo corrupto no se porque:{e}")
                             log.error(f"JSON corrupto, usando configuración por defecto: {e}")
                             config_model = config_default
                     else:
                         config_model = config_default
                     dispositivo = cls.Dispositivo_inferencia()
-                    print("dispositivo detectado:", dispositivo)
-                    print("se agrega informacion",config_model)
                     config_model["modelos"][name_model] = {
                         "dataset": os.path.basename(carpeta_dataset),
                         "trainer": entrenamiento_model,
@@ -161,22 +156,11 @@ class Configuracionnnunetv2:
                         "nuevo_espaciado": [1, 1, 1],
                         "device": dispositivo[0] if dispositivo else "cpu"
                     }
-                    #print(config_model,"dentro del importacion_modelo_json")
-                    #with open(archivojson, "w") as f:
-                        #json.dump(config_model, f, indent=4)
-                        #f.flush()
-                        #os.fsync(f.fileno())
 
-                    print("Antes de guardar:")
-                    print(config_model)
                     with open(archivojson, "w", encoding="utf-8") as f:
                         json.dump(config_model, f, indent=4)
                         f.flush()
                         os.fsync(f.fileno())
-                    with open(archivojson, "r", encoding="utf-8") as f:
-                        print("Después de guardar:")
-                        print(f.read())
-
                     log.info(f"Modelo '{name_model}' guardado correctamente en JSON")
 
             else:
@@ -188,7 +172,6 @@ class Configuracionnnunetv2:
                 shutil.rmtree(cls.ruta_dataset)
 
         except Exception as e:
-            print(e)
             log.error(f"Error: En la configuracion del modelo {name_model}:\n {e}")
             cls.BANDERA_IMPORTACION = False
 
@@ -239,9 +222,9 @@ class Configuracionnnunetv2:
         try:
             sistema = platform.system()
             if sistema == "Windows":
-                ventana.iconbitmap(os.path.join(basedir, "Assets", "medicalomni3d.ico"))
+                ventana.iconbitmap(resource_path("medicalomni3d.ico"))
             else:
-                icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+                icon_img = Image.open(resource_path("medicalomni3d.png"))
                 icon_photo = ImageTk.PhotoImage(icon_img)
                 ventana._icon_photo = icon_photo
                 ventana.iconphoto(True, icon_photo)
@@ -487,26 +470,42 @@ class Configuracionnnunetv2:
                 return None
         else:
             return None
+
+    @classmethod
+    def _run_predict(cls,argv):
+        sys.argv = argv
+        predict_entry_point()
+
     @classmethod
     def Inferencias_modelo_asincrona(cls, modelo_selecionado: str = "", device: str = None):
         try:
             if device is not None:
-
                 path_json = cls.BASE_CONFIGURACION
                 if os.path.exists(path_json) and modelo_selecionado != "":
                     with open(path_json, "r") as archivo:
                         config = json.load(archivo)
                     inf_model = config["modelos"][modelo_selecionado]
-                    plant_model=cls.Obtencion_plan_modelo(dataset=inf_model["dataset"])
-                    if plant_model :
-                        comando = ["nnUNetv2_predict","-d", inf_model["dataset"],"-i", cls.PATH_DICT["nnUNet_Procesamiento_imagenes"],"-o", cls.PATH_DICT["nnUNet_Salida_imagenes_modelo"],"-f", *inf_model["fold"],"-tr", inf_model["trainer"],"-c", inf_model["modelo"],"-device", device,"-p",plant_model]
-                        proceso_gpu = subprocess.Popen(comando)
-                        return proceso_gpu
+                    plant_model = cls.Obtencion_plan_modelo(dataset=inf_model["dataset"])
+                    if plant_model:
+                        argv = [
+                            "nnUNetv2_predict",
+                            "-d", inf_model["dataset"],
+                            "-i", cls.PATH_DICT["nnUNet_Procesamiento_imagenes"],
+                            "-o", cls.PATH_DICT["nnUNet_Salida_imagenes_modelo"],
+                            "-f", *inf_model["fold"],
+                            "-tr", inf_model["trainer"],
+                            "-c", inf_model["modelo"],
+                            "-device", device,
+                            "-p", plant_model,
+                        ]
+                        proceso = multiprocessing.Process(target=cls._run_predict, args=(argv,))
+                        proceso.start()
+                        return proceso
                     else:
-                        log.critical(f"Error: No se puede ejecutar el modelo")
+                        log.critical("Error: No se puede ejecutar el modelo")
                         return None
         except Exception as e:
-            log.critical(f"Error: al lanzar el subproceso nnUNet: {e}")
+            log.critical(f"Error al lanzar el subproceso nnUNet: {e}")
             return None
 
     @classmethod

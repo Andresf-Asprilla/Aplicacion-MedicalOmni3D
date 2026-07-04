@@ -19,7 +19,7 @@ else:
 
 try:
     from ctypes import windll
-    myappid = 'andresCA.MedicalOmni3D.subproduct.0.0.0.1'
+    myappid = 'andresCA.MedicalOmni3D.subproduct.0.0.1.1'
     windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except ImportError:
     pass

@@ -3,12 +3,9 @@ from tkinter import ttk
 from tkinter import messagebox
 import multiprocessing
 import sys,os,platform
-from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana,Estilos
+from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana, Estilos, resource_path
 from Medicalomni3d.Configuracion_Apcivmapcas import Configuracionnnunetv2
 from Medicalomni3d.Dao_medicalomni3d import DAOMedicalOmni3D
-
-basedir = os.path.dirname(__file__)
-
 
 class VentanaCargaSubproceso(tk.Toplevel):
     def __init__(self, master, usuario,lista_imagenes_tabla,imagenes_codificadas,espaciado_orig,congiguracion,callback=None):
@@ -42,10 +39,10 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.after(150, self.iniciar_fase_1_proceso)
         try:
             if platform.system() == "Windows":
-                self.iconbitmap(os.path.join(basedir, "Assets", "medicalomni3d.ico"))
+                self.iconbitmap(resource_path("medicalomni3d.ico"))
             else:
                 from PIL import Image, ImageTk
-                icon_img = Image.open(os.path.join(basedir, "Assets", "medicalomni3d.png"))
+                icon_img = Image.open(resource_path("medicalomni3d.png"))
                 icon_photo = ImageTk.PhotoImage(icon_img)
                 self._icon_photo = icon_photo
                 self.iconphoto(True, icon_photo)
@@ -127,17 +124,16 @@ class VentanaCargaSubproceso(tk.Toplevel):
         except Exception:
             pass
         try:
-            if (self.subproceso_gpu is not None and self.subproceso_gpu.poll() is None ):
+            if (self.subproceso_gpu is not None and self.subproceso_gpu.is_alive()):
                 self.subproceso_gpu.terminate()
                 if os.listdir(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"]):
                     Configuracionnnunetv2.Eliminacion_json_salida()
                     for imagen in os.listdir(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"]):
                         os.remove(os.path.join(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"], imagen))
-                try:
-                    self.subproceso_gpu.wait(timeout=5)
-                except subprocess.TimeoutExpired:
+                self.subproceso_gpu.join(timeout=5)
+                if self.subproceso_gpu.is_alive():
                     self.subproceso_gpu.kill()
-                    self.subproceso_gpu.wait()
+                    self.subproceso_gpu.join()
         except Exception:
             pass
 
@@ -153,7 +149,6 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.update()
 
         self.subproceso_gpu = Configuracionnnunetv2.Inferencias_modelo_asincrona(modelo_selecionado=self.modelo_seleccionado,device=self.dispositivo)
-
         if self.subproceso_gpu:
             self.monitorear_subproceso()
         else:
@@ -173,14 +168,14 @@ class VentanaCargaSubproceso(tk.Toplevel):
         if self.subproceso_gpu is None:
             return
 
-        if self.subproceso_gpu.poll() is None:
+        if self.subproceso_gpu.is_alive():
             self.after(500, self.monitorear_subproceso)
             return
 
         if self.cancelado:
             return
 
-        if self.subproceso_gpu.returncode == 0:
+        if self.subproceso_gpu.exitcode == 0:
             self.fase_3_restauracion()
         else:
             self.grab_release()
