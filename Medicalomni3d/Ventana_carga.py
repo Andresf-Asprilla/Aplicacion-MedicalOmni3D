@@ -7,6 +7,13 @@ from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana, Est
 from Medicalomni3d.Configuracion_Apcivmapcas import Configuracionnnunetv2
 from Medicalomni3d.Dao_medicalomni3d import DAOMedicalOmni3D
 
+try:
+    from ctypes import windll
+    myappid = 'andresCA.MedicalOmni3D.subproduct.1.0.0.0'
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except ImportError:
+    pass
+
 class VentanaCargaSubproceso(tk.Toplevel):
     def __init__(self, master, usuario,lista_imagenes_tabla,imagenes_codificadas,espaciado_orig,congiguracion,callback=None):
         super().__init__(master)

@@ -19,7 +19,7 @@ else:
 
 try:
     from ctypes import windll
-    myappid = 'andresCA.MedicalOmni3D.subproduct.0.0.1.1'
+    myappid = 'andresCA.MedicalOmni3D.subproduct.1.0.0.0'
     windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except ImportError:
     pass
@@ -104,7 +104,7 @@ class MedicalOmni3D_app(tk.Tk):
         self.label_capcha.grid(row=3, column=0, columnspan=2, pady=20)
         self.frame_captcha.grid(row=4, column=0, columnspan=2)
         self.entrada_captcha = ttk.Entry(self.frame_captcha, justify=tk.CENTER)
-        self.boton_captcha_refresh = ttk.Button(self.frame_captcha, image=self.icono_refresh, width=6,command=lambda :self.Imagen_Captcha(event=None),style="Inicio_sesion.TButton")
+        self.boton_captcha_refresh = ttk.Button(self.frame_captcha, image=self.icono_refresh, width=6,cursor="hand2",command=lambda :self.Imagen_Captcha(event=None),style="Inicio_sesion.TButton")
         self.entrada_captcha.pack(side=tk.LEFT)
         self.boton_captcha_refresh.pack(side=tk.RIGHT)
         self.boton_captcha_refresh.bind("<Return>",self.Imagen_Captcha)
@@ -116,7 +116,7 @@ class MedicalOmni3D_app(tk.Tk):
         self.frame_password = ttk.Frame(self.frame_1, style="Custom.TFrame")
         self.frame_password.grid(row=2, column=1, sticky=tk.W)
         self.entrada_password = ttk.Entry(self.frame_password,justify=tk.LEFT,show="●",width=24)
-        self.boton_mostar = ttk.Button(self.frame_password,image=self.imagen_icono_monstrar,width=2,command=lambda :self.Mostrar_ocultar_password(event=None),style="Inicio_sesion.TButton")
+        self.boton_mostar = ttk.Button(self.frame_password,image=self.imagen_icono_monstrar,width=2,cursor="hand2",command=lambda :self.Mostrar_ocultar_password(event=None),style="Inicio_sesion.TButton")
         self.entrada_password.pack(side=tk.LEFT)
         self.boton_mostar.pack(side=tk.LEFT)
         self.boton_mostar.bind("<Return>", self.Mostrar_ocultar_password)

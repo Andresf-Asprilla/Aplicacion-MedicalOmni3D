@@ -12,11 +12,21 @@ from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana, Est
 import os, re, time, shutil, json
 from Medicalomni3d.Usuario_medicalomni3d import Usuario
 
+try:
+    from ctypes import windll
+
+    myappid = 'andresCA.MedicalOmni3D.subproduct.1.0.0.0'
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except ImportError:
+    pass
+
+
 class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def __init__(self, master=None, usuario=None):
         super().__init__(master)
         self.frame_visualizador = None
         self.label_username = None
+        self.ventana_carga = None
         self.imagen_update_modelo = None
         self.imagen_cancelar = None
         self.imagen_export = None
@@ -42,10 +52,10 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.dispositivo = Configuracionnnunetv2.Dispositivo_inferencia()
         name_modelo = self.configuracion_sistema["modelo_seleccionado"]
         self.dispositivo_selecionado = self.configuracion_sistema["modelos"][name_modelo]["device"] if \
-        self.configuracion_sistema["modelo_seleccionado"] != "" else "cpu"
+            self.configuracion_sistema["modelo_seleccionado"] != "" else "cpu"
         self.archivojson = Configuracionnnunetv2.BASE_CONFIGURACION
         self.lista_espaciado = self.configuracion_sistema["modelos"][name_modelo]["nuevo_espaciado"] if \
-        self.configuracion_sistema["modelo_seleccionado"] != "" else [1, 1, 1]
+            self.configuracion_sistema["modelo_seleccionado"] != "" else [1, 1, 1]
         self.normalizacion = tk.BooleanVar(
             value=self.configuracion_sistema["modelos"][name_modelo]["Normalizacion"] if self.configuracion_sistema[
                                                                                              "modelo_seleccionado"] != "" else True)
@@ -93,6 +103,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
             self.visor.destruir_visor()
         DAOMedicalOmni3D.Insertar_registro_intento(self.usuario, self.usuario.ACCIONES[2])
         Configuracionnnunetv2.Eliminacion_json_salida()
+        self.cancelar_proceso()
         self.master.destroy()
 
     def cerrar_sesion(self, event):
@@ -100,8 +111,14 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
             self.visor.destruir_visor()
         DAOMedicalOmni3D.Insertar_registro_intento(self.usuario, self.usuario.ACCIONES[2])
         Configuracionnnunetv2.Eliminacion_json_salida()
+        self.cancelar_proceso()
         self.destroy()
         self.master.deiconify()
+
+    def cancelar_proceso(self):
+        if self.ventana_carga is not None:
+            if self.ventana_carga.winfo_exists():
+                self.ventana_carga.Cancelar_ejecucion()
 
     def reset_timer(self, event=None):
         self.ultimo_evento = time.time()
@@ -127,13 +144,15 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
             self.state("zoomed")
 
         elif sistema == 'Darwin':
-            icon_img = resource_path("medicalomni3d.png")
+            icon_img = Image.open(resource_path("medicalomni3d.png"))
+
             icon_photo = ImageTk.PhotoImage(icon_img)
             self.iconphoto(True, icon_photo)
             self.attributes('-fullscreen', False)
             self.wm_state('zoomed')
         else:
-            icon_img = resource_path("medicalomni3d.png")
+            icon_img = Image.open(resource_path("medicalomni3d.png"))
+
             icon_photo = ImageTk.PhotoImage(icon_img)
             self.iconphoto(True, icon_photo)
             self.attributes('-zoomed', True)
@@ -155,7 +174,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.imagen_eliminar = Leer_imagenes(resource_path("delete.png"))
         self.imagen_ejecutar_modelo = Leer_imagenes(resource_path("network_intelligence.png"))
         self.imagen_buscar_bd = Leer_imagenes(resource_path("search.png"), (16, 16))
-        self.imagen_update_modelo = Leer_imagenes(resource_path("network_intelligence_update.png"),(15, 15))
+        self.imagen_update_modelo = Leer_imagenes(resource_path("network_intelligence_update.png"), (15, 15))
         self.imagen_admin = Leer_imagenes(resource_path("admin.png"), (30, 30))
         self.imagen_principal = Leer_imagenes(resource_path("medicalomni3d.png"), (70, 70))
         self.imagen_icono_monstrar = Leer_imagenes(resource_path("visibility.png"), (12, 13))
@@ -370,10 +389,12 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
                             self.configuracion_sistema = json.load(archivojson)
                         Espaciado = Configuracionnnunetv2.Obtener_espaciado_original(
                             lista_imagenes_selecionadas=self.lista_imagenes_tabla)
-                        VentanaCargaSubproceso(master=self, usuario=self.usuario,
-                                               lista_imagenes_tabla=self.lista_imagenes_tabla,
-                                               imagenes_codificadas=self.imagenes_codificadas, espaciado_orig=Espaciado,
-                                               congiguracion=self.configuracion_sistema, callback=self.Cargar_imagenes)
+                        self.ventana_carga = VentanaCargaSubproceso(master=self, usuario=self.usuario,
+                                                                    lista_imagenes_tabla=self.lista_imagenes_tabla,
+                                                                    imagenes_codificadas=self.imagenes_codificadas,
+                                                                    espaciado_orig=Espaciado,
+                                                                    congiguracion=self.configuracion_sistema,
+                                                                    callback=self.Cargar_imagenes)
                 else:
                     messagebox.showerror("Error Inferencia", "Por favor seleccione un modelo.")
             else:
@@ -745,8 +766,12 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
     def Eliminar_usuario(self, event):
         lista_usuarios = self.tabla_usuarios.selection()
         if lista_usuarios:
-            if not (len(self.tabla_usuarios.get_children()) == 1 and
-                    self.tabla_usuarios.item(self.tabla_usuarios.selection()[0])['values'][2] == "Administrador"):
+            contador = 0
+            for usuarios_eliminar in self.tabla_usuarios.get_children():
+                if self.tabla_usuarios.item(usuarios_eliminar)['values'][2] == "Administrador":
+                    contador += 1
+            if not (contador == 1 and self.tabla_usuarios.item(self.tabla_usuarios.selection()[0])['values'][
+                2] == "Administrador"):
                 usuario = Usuario(id_usuario=self.tabla_usuarios.item(lista_usuarios[0])['values'][0],
                                   username=self.tabla_usuarios.item(lista_usuarios[0])['values'][1])
                 respuesta = messagebox.askyesno(title="Eliminar usuario",
@@ -775,13 +800,13 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.frame_botones_usuarios.columnconfigure(0, weight=1)
         self.frame_botones_usuarios.columnconfigure(1, weight=1)
         self.frame_botones_usuarios.columnconfigure(2, weight=1)
-        self.boton_agregar_usuario = ttk.Button(self.frame_botones_usuarios, text="Nuevo usuario",
+        self.boton_agregar_usuario = ttk.Button(self.frame_botones_usuarios, text="Nuevo usuario", cursor="hand2",
                                                 command=lambda: self.Ventana_creacion_usuario(event=None))
         self.boton_agregar_usuario.bind("<Return>", self.Ventana_creacion_usuario)
-        self.boton_editar_usuario = ttk.Button(self.frame_botones_usuarios, text="Editar usuario",
+        self.boton_editar_usuario = ttk.Button(self.frame_botones_usuarios, text="Editar usuario", cursor="hand2",
                                                command=lambda: self.Editar_usuario(event=None))
         self.boton_editar_usuario.bind("<Return>", self.Editar_usuario)
-        self.boton_eliminar_usuario = ttk.Button(self.frame_botones_usuarios, text="Eliminar usuario",
+        self.boton_eliminar_usuario = ttk.Button(self.frame_botones_usuarios, text="Eliminar usuario", cursor="hand2",
                                                  command=lambda: self.Eliminar_usuario(event=None))
         self.boton_eliminar_usuario.bind("<Return>", self.Eliminar_usuario)
         self.boton_agregar_usuario.grid(row=1, column=0, sticky=tk.EW, padx=20, pady=8)
@@ -986,10 +1011,16 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         ttk.Label(frame_principal, text="Estado:").grid(row=3, column=0, sticky=tk.E, pady=10)
         self.correo_editar_usuario = ttk.Entry(frame_principal, width=35)
         self.correo_editar_usuario.insert(0, string=self.usuario_editar.username)
-        self.Rol_editar_usuario = ttk.Combobox(frame_principal, values=Usuario.Rol, width=32, state="readonly")
-        self.Estado_editar_usuario = ttk.Combobox(frame_principal, values=Usuario.Estado, width=32, state="readonly")
-        if len(self.tabla_usuarios.get_children()) == 1 and \
-                self.tabla_usuarios.item(self.tabla_usuarios.selection()[0])['values'][2] == "Administrador":
+        self.Rol_editar_usuario = ttk.Combobox(frame_principal, values=Usuario.Rol, width=32, state="readonly",
+                                               cursor="hand2")
+        self.Estado_editar_usuario = ttk.Combobox(frame_principal, values=Usuario.Estado, width=32, state="readonly",
+                                                  cursor="hand2")
+        contador = 0
+        for editar_usuraio in self.tabla_usuarios.get_children():
+            if self.tabla_usuarios.item(editar_usuraio)['values'][2] == "Administrador":
+                contador += 1
+        if contador == 1 and self.tabla_usuarios.item(self.tabla_usuarios.selection()[0])['values'][
+            2] == "Administrador":
             self.Rol_editar_usuario.set(value=self.usuario_editar.rol)
             self.Rol_editar_usuario.configure(state=tk.DISABLED)
         else:
@@ -999,13 +1030,14 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.Rol_editar_usuario.grid(row=2, column=1, sticky=tk.W, pady=10)
         self.Estado_editar_usuario.grid(row=3, column=1, sticky=tk.W, pady=10)
         check_password = ttk.Checkbutton(frame_principal, text="Cambiar contraseña", variable=self.cambiar_password,
-                                         command=self.habilitar_password)
+                                         cursor="hand2", command=self.habilitar_password)
         check_password.grid(row=4, column=1, sticky=tk.W)
         ttk.Label(frame_principal, text="Contraseña:").grid(row=5, column=0, sticky=tk.E, pady=10)
         frame_principal_2 = ttk.Frame(frame_principal)
         frame_principal_2.grid(row=5, column=1, sticky=tk.W, pady=10)
         self.contrasena_editar_usuario = ttk.Entry(frame_principal_2, width=31, show="●", state=tk.DISABLED)
         self.contrasena_editar_usuario_mostar = ttk.Button(frame_principal_2, image=self.imagen_icono_monstrar, width=2,
+                                                           cursor="hand2",
                                                            command=lambda: self.Mostrar_ocultar_password_editar(
                                                                event=None))
         self.contrasena_editar_usuario_mostar.bind("<Return>", self.Mostrar_ocultar_password_editar)
@@ -1014,10 +1046,10 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         ttk.Separator(frame_principal, orient="horizontal").grid(row=6, column=0, columnspan=2, sticky=tk.EW, pady=25)
         frame_botones = ttk.Frame(frame_principal)
         frame_botones.grid(row=7, column=0, columnspan=2, pady=10)
-        boton_guardar_editar_usuario = ttk.Button(frame_botones, text="Guardar", width=15,
+        boton_guardar_editar_usuario = ttk.Button(frame_botones, text="Guardar", width=15, cursor="hand2",
                                                   command=lambda: self.Guardar_usuario_editado(event=None))
         boton_guardar_editar_usuario.grid(row=0, column=0, padx=10)
-        boton_cancelar_editar_usuario = ttk.Button(frame_botones, text="Cancelar", width=15,
+        boton_cancelar_editar_usuario = ttk.Button(frame_botones, text="Cancelar", width=15, cursor="hand2",
                                                    command=self.ventana_editar.destroy)
         boton_cancelar_editar_usuario.grid(row=0, column=1, padx=10)
         boton_guardar_editar_usuario.bind("<Return>", self.Guardar_usuario_editado)
@@ -1054,13 +1086,16 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         ttk.Label(frame_principal, text="Estado:").grid(row=4, column=0, sticky=tk.E, pady=10)
         self.correo_nuevo_usuario = ttk.Entry(frame_principal, width=35)
         frame_principal_2 = ttk.Frame(frame_principal)
-        self.Rol_nuevo_usuario = ttk.Combobox(frame_principal, values=Usuario.Rol, width=32, state="readonly")
-        self.Estado_nuevo_usuario = ttk.Combobox(frame_principal, values=Usuario.Estado, width=32, state="readonly")
+        self.Rol_nuevo_usuario = ttk.Combobox(frame_principal, values=Usuario.Rol, width=32, cursor="hand2",
+                                              state="readonly")
+        self.Estado_nuevo_usuario = ttk.Combobox(frame_principal, values=Usuario.Estado, width=32, cursor="hand2",
+                                                 state="readonly")
         self.Rol_nuevo_usuario.current(0)
         self.Estado_nuevo_usuario.current(1)
         self.correo_nuevo_usuario.grid(row=1, column=1, sticky=tk.W, pady=10)
         self.contrasena_nuevo_usuario = ttk.Entry(frame_principal_2, width=31, show="●")
         self.contrasena_nuevo_usuario_mostar = ttk.Button(frame_principal_2, image=self.imagen_icono_monstrar, width=2,
+                                                          cursor="hand2",
                                                           command=lambda: self.Mostrar_ocultar_password(event=None),
                                                           style="Inicio_sesion.TButton")
         self.contrasena_nuevo_usuario_mostar.bind("<Return>", self.Mostrar_ocultar_password)
@@ -1072,11 +1107,11 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         ttk.Separator(frame_principal, orient="horizontal").grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=25)
         frame_botones = ttk.Frame(frame_principal)
         frame_botones.grid(row=6, column=0, columnspan=2, pady=10)
-        boton_guardar_nuevo_usuario = ttk.Button(frame_botones, text="Guardar", width=15,
+        boton_guardar_nuevo_usuario = ttk.Button(frame_botones, text="Guardar", width=15, cursor="hand2",
                                                  command=lambda: self.Guardar_usuario(event=None))
         boton_guardar_nuevo_usuario.grid(row=0, column=0, padx=10)
         boton_guardar_nuevo_usuario.bind("<Return>", self.Guardar_usuario)
-        boton_cancelar_nuevo_usuario = ttk.Button(frame_botones, text="Cancelar", width=15,
+        boton_cancelar_nuevo_usuario = ttk.Button(frame_botones, text="Cancelar", width=15, cursor="hand2",
                                                   command=self.ventana.destroy)
         boton_cancelar_nuevo_usuario.grid(row=0, column=1, padx=10)
         boton_cancelar_nuevo_usuario.bind("<Return>", lambda event: self.ventana.destroy())

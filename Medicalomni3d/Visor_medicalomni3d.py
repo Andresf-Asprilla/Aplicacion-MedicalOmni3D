@@ -11,6 +11,14 @@ from PIL import Image, ImageTk
 from Medicalomni3d.loggin_MedicalOmni3d import log
 from Medicalomni3d.Configuracion_medicalomni3d import Estilos
 
+try:
+    from ctypes import windll
+    myappid = 'andresCA.MedicalOmni3D.subproduct.1.0.0.0'
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except ImportError:
+    pass
+
+
 class Visor_MedicalOmni3D:
     def __init__(self, frame_visualizador,imagen:str=None):
         self.interactor = None

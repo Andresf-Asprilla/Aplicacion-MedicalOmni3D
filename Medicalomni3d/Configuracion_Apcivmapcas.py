@@ -472,9 +472,37 @@ class Configuracionnnunetv2:
             return None
 
     @classmethod
-    def _run_predict(cls,argv):
+    def _run_predict(cls, argv):
+        log_file = None
+        if sys.stdout is None or sys.stderr is None:
+            try:
+                os.makedirs(cls.PATH_LOGGING, exist_ok=True)
+                log_path = os.path.join(cls.PATH_LOGGING, "nnunet_predict_output.log")
+                log_file = open(log_path, "w", buffering=1, encoding="utf-8")
+                sys.stdout = log_file
+                sys.stderr = log_file
+            except Exception as e:
+                log.error(f"No se pudo redirigir stdout/stderr para nnUNet: {e}")
+
         sys.argv = argv
-        predict_entry_point()
+        try:
+            predict_entry_point()
+        except Exception as e:
+            log.critical(f"Error dentro del subproceso de inferencia nnUNet: {e}")
+            raise
+        finally:
+            try:
+                if sys.stdout:
+                    sys.stdout.flush()
+                if sys.stderr:
+                    sys.stderr.flush()
+            except Exception:
+                pass
+            if log_file is not None:
+                try:
+                    log_file.close()
+                except Exception:
+                    pass
 
     @classmethod
     def Inferencias_modelo_asincrona(cls, modelo_selecionado: str = "", device: str = None):
@@ -614,4 +642,3 @@ if __name__ == "__main__":
     #Configuracionnnunetv2.Dispositivo_inferencia()
     #Configuracionnnunetv2.Importacion_modelo(r"C:\Users\andre\Downloads\APCIVMAPCAs_3d_lowres2.zip")
     #Configuracionnnunetv2.Cifrar_imagenes(path_imagen=r"C:\Users\andre\OneDrive\Escritorio\imagen_prueba\CTACardio3.nii.gz")
-
