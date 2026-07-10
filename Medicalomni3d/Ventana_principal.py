@@ -890,6 +890,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
                 if self.cambiar_password.get():
                     verificador = DAOMedicalOmni3D.Editar_usuario_password(user=self.usuario_editar)
+                    self.cambiar_password.set(value=False)
                     self.Eliminar_toda_tabla_usuarios()
                     self.Cargar_datos_usuarios()
                     self.ventana_editar.destroy()
@@ -898,6 +899,7 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
                 if verificador:
                     texto = f"{self.usuario.ACCIONES[8]}: {self.usuario_editar.username}"
                     DAOMedicalOmni3D.Insertar_registro_intento(self.usuario, texto)
+                    self.cambiar_password.set(value=False)
                     self.Eliminar_toda_tabla_usuarios()
                     self.Cargar_datos_usuarios()
                     self.ventana_editar.destroy()
@@ -978,6 +980,10 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
             self.contrasena_editar_usuario_mostar.configure(image=self.imagen_icono_monstrar)
             self.contrasena_editar_usuario.configure(show="●")
 
+    def cerrar_ventana_editar_usuario(self, event):
+        self.cambiar_password.set(value=False)
+        self.ventana_editar.destroy()
+
     def Ventana_editar_usuario(self):
         self.ventana_editar = tk.Toplevel(self)
         Configuracion_ventana(ventana=self.ventana_editar, ancho=600, alto=450, titulo="Editar usuario",
@@ -1050,10 +1056,10 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
                                                   command=lambda: self.Guardar_usuario_editado(event=None))
         boton_guardar_editar_usuario.grid(row=0, column=0, padx=10)
         boton_cancelar_editar_usuario = ttk.Button(frame_botones, text="Cancelar", width=15, cursor="hand2",
-                                                   command=self.ventana_editar.destroy)
+                                                   command=lambda: self.cerrar_ventana_editar_usuario(event=None))
         boton_cancelar_editar_usuario.grid(row=0, column=1, padx=10)
         boton_guardar_editar_usuario.bind("<Return>", self.Guardar_usuario_editado)
-        boton_cancelar_editar_usuario.bind("<Return>", lambda event: self.ventana_editar.destroy())
+        boton_cancelar_editar_usuario.bind("<Return>", self.cerrar_ventana_editar_usuario)
 
     def Ventana_creacion_usuario(self, event):
         self.ventana = tk.Toplevel(self)
