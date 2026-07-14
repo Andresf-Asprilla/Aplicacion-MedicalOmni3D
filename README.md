@@ -23,6 +23,7 @@ La aplicación integra modelos de **Inteligencia Artificial** basados en  **[nnU
 # Objetivo
 
 MedicalOmni3D ha sido desarrollado principalmente con fines de investigación, educativos y experimentales. Su propósito es facilitar la visualización, el procesamiento y el análisis de imágenes médicas, así como apoyar el desarrollo, la evaluación y la integración de modelos de inteligencia artificial en entornos de investigación.
+
 ---
 
 # Arquitectura
@@ -40,9 +41,6 @@ MedicalOmni3D ha sido desarrollado principalmente con fines de investigación, e
         │
         ▼
   Preprocesamiento
-        │
-        ▼
-   Servidor MONAI Label
         │
         ▼
      Modelo nnU-Net
@@ -76,27 +74,6 @@ MedicalOmni3D ha sido desarrollado principalmente con fines de investigación, e
 * VTK
 * SQLite
 * Pillow
-
----
-
-# Estructura del proyecto
-
-```text
-MedicalOmni3D/
-│
-├── App_medicalomni3d.py
-├── main.py
-├── Configuracion/
-├── DAO/
-├── Iconos/
-├── Imagenes/
-├── Interfaces/
-├── Medicalomni3d/
-├── Modelos/
-├── Utils/
-├── requirements.txt
-└── README.md
-```
 
 ---
 
