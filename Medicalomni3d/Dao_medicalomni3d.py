@@ -215,7 +215,7 @@ class DAOMedicalOmni3D:
         except Exception as e:
             log.error(f"Error al actualizar la última sesión:\n{e}")
     @classmethod
-    def Obtener_tiempo_minutos(cls):
+    def Obtener_tiempo_minutos(cls,user:Usuario):
         try:
             fecha_actual = datetime.datetime.now()
             fecha_usuario = datetime.datetime.strptime(user.fecha, "%Y-%m-%d %H:%M:%S")
@@ -241,7 +241,7 @@ class DAOMedicalOmni3D:
         usuario=cls.Acceso_app(user)
         if usuario:
             if usuario.bloqueado:
-                minutos=cls.Obtener_tiempo_minutos()
+                minutos=cls.Obtener_tiempo_minutos(usuario)
                 if minutos <15:
                     messagebox.showerror(
                         "Error de inicio de sesión",
@@ -260,7 +260,7 @@ class DAOMedicalOmni3D:
             usuario=cls.Consultar_intentos_fallidos(user)
             if usuario is not None:
                 if usuario.bloqueado:
-                    minutos = cls.Obtener_tiempo_minutos()
+                    minutos = cls.Obtener_tiempo_minutos(usuario)
                     if minutos < 15:
                         messagebox.showerror(
                             "Error de inicio de sesión",
@@ -275,12 +275,18 @@ class DAOMedicalOmni3D:
                         return usuario
                 else:
                     usuario.intentos_fallidos += 1
-                    usuario.bloqueado = 1 if usuario.intentos_fallidos > 5 else 0
+                    usuario.bloqueado = 1 if usuario.intentos_fallidos >= 5 else 0
+                    if usuario.bloqueado:
+                        usuario.intentos_fallidos=0
+                        messagebox.showerror(
+                            "Error Inicio sesion",
+                            "Por motivos de seguridad, su usuario ha sido bloqueado temporalmente ")
+                    else:
+                        messagebox.showerror(
+                            "Error Inicio sesion",
+                            "Error de autenticación. Intente nuevamente."
+                        )
                     cls.Actualizar_intentos_bloqueo(usuario)
-                    messagebox.showerror(
-                        "Error Inicio sesion",
-                        "Error de autenticación. Intente nuevamente."
-                    )
                     cls.Insertar_registro_intento(usuario,texto=usuario.ACCIONES[1])
                     return False
             else:
