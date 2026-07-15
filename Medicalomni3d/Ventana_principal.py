@@ -1223,7 +1223,6 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
         self.combox_usuarios.set("Todos")
         self.Cargar_datos_logs(usuario=self.combox_usuarios.get(), accion=self.combox_acciones.get())
 
-        # self.frame_botones_usuarios_gestion()
 
     def gestion_log_2(self):
         self.tab_logs = ttk.Frame(self.notebook_admin)
