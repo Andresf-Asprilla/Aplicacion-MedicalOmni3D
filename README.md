@@ -170,8 +170,8 @@ Utilice las siguientes credenciales para iniciar sesión en MedicalOmni3D:
 
 La aplicación utiliza un modelo basado en **nnU-Net v2** entrenado específicamente para segmentar:
 
-* MAPCAs del lado derecho.
-* MAPCAs del lado izquierdo.
+* Lado derecho del Corazon.
+* Lado izquierdo del Corazon.
 * Arteria pulmonar.
 * Aorta.
 
@@ -190,82 +190,3 @@ La aplicación utiliza un modelo basado en **nnU-Net v2** entrenado específicam
 * `.nii.gz`
 * `.mnc` 
 * `.tif` 
-
----
-
-# Capturas de pantalla
-
-Puedes agregar imágenes como las siguientes:
-
-```text
-docs/images/login.png
-
-docs/images/main_window.png
-
-docs/images/segmentation.png
-
-docs/images/3d_view.png
-```
-
-Luego referenciarlas:
-
-```markdown
-## Inicio de sesión
-
-![Login](docs/images/login.png)
-
-## Segmentación
-
-![Segmentación](docs/images/segmentation.png)
-
-## Visualización 3D
-
-![3D](docs/images/3d_view.png)
-```
-
----
-
-# Contribuciones
-
-Las contribuciones son bienvenidas.
-
-1. Crear un Fork.
-2. Crear una nueva rama.
-
-```bash
-git checkout -b feature/nueva-funcionalidad
-```
-
-3. Realizar los cambios.
-
-4. Enviar un Pull Request.
-
----
-
-# Autor
-
-**Andrés Felipe Asprilla Mosquera**
-
-Ingeniero Biomédico
-
-Universidad EIA
-
----
-
-# Licencia
-
-Este proyecto está disponible únicamente con fines académicos e investigativos. Cualquier uso comercial requiere autorización del autor.
-
----
-
-# Contacto
-
-GitHub: **[https://github.com/Andresf-Asprilla](https://github.com/Andresf-Asprilla)**
-
-Correo electrónico: **(Agregar correo institucional o personal)**
-
----
-
-## Cita
-
-Si utilizas MedicalOmni3D en investigaciones académicas, por favor cita el proyecto y el trabajo de grado correspondiente.
