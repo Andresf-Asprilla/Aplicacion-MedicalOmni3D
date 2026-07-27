@@ -1,0 +1,26 @@
+MedicalOmni3D
+
+Copyright © 2026 Andres Asprilla Mosquera. All rights reserved.
+
+This product includes software developed by Andres Asprilla Mosquera.
+
+Licensed under the Apache License, Version 2.0 (the "License"). You may not use this software except in compliance with the License. A copy of the License is included in the LICENSE file accompanying this distribution.
+
+MedicalOmni3D is an open-source platform for three-dimensional visualization, processing, and analysis of medical imaging data.
+
+This software is provided on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+The authors and contributors shall not be liable for any claim, damages, or other liability arising from the use of this software.
+
+Although the Apache License permits commercial and non-commercial use, MedicalOmni3D has been primarily developed for research, education, and experimental purposes. It has not been validated or certified for clinical diagnosis, medical treatment, or regulatory use.
+
+If you use MedicalOmni3D in scientific publications, academic theses, technical reports, or research projects, citation of the software is appreciated.
+
+Project:
+MedicalOmni3D
+
+Author:
+Andres Asprilla Mosquera
+
+Year:
+2026
