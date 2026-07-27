@@ -11,10 +11,9 @@ La aplicación integra modelos de **Inteligencia Artificial** basados en  **[nnU
 * Inicio de sesión mediante autenticación de usuario.
 * Importación de imágenes médicas en formato **NIfTI (.nii.gz)**.
 * Segmentación automática utilizando modelos entrenados con **nnU-Net**.
-* Comunicación con un servidor **MONAI Label** para realizar la inferencia.
 * Visualización multiplanar (axial, coronal y sagital).
 * Reconstrucción tridimensional de las estructuras segmentadas.
-* Exportación de modelos segmentados.
+* Exportación de reconstrucciones.
 * Interfaz gráfica desarrollada con **Tkinter**.
 * Compatible con Windows, macOS y Linux.
 
@@ -162,7 +161,7 @@ Utilice las siguientes credenciales para iniciar sesión en MedicalOmni3D:
 2. Seleccionar el estudio de tomografía en formato **NIfTI (.nii.gz)**.
 3. Ejecutar la segmentación automática.
 4. Visualizar el resultado en  3D.
-5. Exportar la segmentación.
+5. Exportar la reconstrucciones.
 
 ---
 
