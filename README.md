@@ -1,9 +1,12 @@
 # MedicalOmni3D
 
-MedicalOmni3D es una aplicación de escritorio desarrollada en **Python** para facilitar la segmentación semiautomática y la visualización tridimensional de estructuras 3D.
+MedicalOmni3D es una aplicación de escritorio desarrollada en **Python** para facilitar la segmentación semiautomática y la visualización 3D.
 
-La aplicación integra modelos de **Inteligencia Artificial** basados en  **[nnU-Net](https://github.com/MIC-DKFZ/nnUNet)**, permitiendo generar segmentaciones automáticas a partir de estudios de tomografía computarizada (CT), además de ofrecer herramientas para la visualización y exportación de modelos 3D.
+La aplicación integra modelos de **Inteligencia Artificial** basados en  **[nnU-Net](https://github.com/MIC-DKFZ/nnUNet)**, un marco robusto y autoajustable para la segmentación mediante redes neuronales basadas en la arquitectura U-Net.
 
+
+
+[![Ver introducción de MedicalOmni3D](imagenes/img_intro.png)](imagenes/video_intro.mp4)
 ---
 
 # Características
