@@ -6,7 +6,7 @@ La aplicación integra modelos de **Inteligencia Artificial** basados en  **[nnU
 
 
 
-[![Ver introducción de MedicalOmni3D](imagenes/img_intro.png)](imagenes/video_intro.mp4)
+[![Ver introducción de MedicalOmni3D](imagenes/img_intro.png)](https://www.youtube.com/watch?v=ChpajFRIzOA)
 ---
 
 # Características
