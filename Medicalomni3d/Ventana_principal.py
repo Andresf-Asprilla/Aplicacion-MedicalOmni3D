@@ -352,7 +352,6 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
                         self.Seleccion_modelos(event=None)
 
                 else:
-
                     self.boton_selecion_modelo.set("Importar modelo")
 
             else:
@@ -677,19 +676,28 @@ class Ventana_Principal_MedicalOmni3D(tk.Toplevel):
 
     def Eliminar_modelo(self, event):
         if self.boton_modelos_configuracion.get() != "Importar modelo":
-            Configuracionnnunetv2.Desinstalar_modelos(self.boton_modelos_configuracion.get())
+
             with open(self.archivojson, "r") as archivo:
                 self.configuracion_sistema = json.load(archivo)
             respuesta = messagebox.askyesno(title="Eliminar modelo",
-                                            message=f"¿Está seguro de que desea eliminar el modelo '{self.boton_modelos_configuracion.get()}'?")
+
+                                         message=f"¿Está seguro de que desea eliminar el modelo '{self.boton_modelos_configuracion.get()}'?")
+
             if respuesta:
                 self.eleccion_modelos.remove(self.boton_modelos_configuracion.get())
+                Configuracionnnunetv2.Desinstalar_modelos(self.boton_modelos_configuracion.get())
+                self.configuracion_sistema["modelos"].pop(self.boton_modelos_configuracion.get())
+                with open(self.archivojson, "w") as archivo:
+                    json.dump(self.configuracion_sistema,archivo,indent=4)
                 if self.eleccion_modelos:
                     self.boton_modelos_configuracion.config(values=self.eleccion_modelos)
                     self.boton_modelos_configuracion.current(0)
                     self.cargar_configuracion(even=None)
                 else:
+                    self.boton_selecion_modelo.configure(values=self.eleccion_modelos)
+                    self.boton_selecion_modelo.set("Importar modelo")
                     self.boton_modelos_configuracion.set("Importar modelo")
+
                 messagebox.showinfo(title="Éxito al eliminar el modelo", message="El modelo se eliminó correctamente.")
         else:
             messagebox.showerror(title="Error al eliminar el modelo", message="No hay un modelo válido para eliminar.")
