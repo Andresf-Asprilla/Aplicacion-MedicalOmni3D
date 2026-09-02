@@ -189,7 +189,7 @@ class Visor_MedicalOmni3D:
             btn = ttk.Button(
                 self.frame_3d,
                 text="Abrir Renderizador Volumétrico",
-                command=self.abrir_ventana_vtk_mac  # mismo método, sirve para Linux
+                command=self.abrir_ventana_vtk_mac
             )
             btn.place(relx=0.5, rely=0.65, anchor=tk.CENTER)
         else:
