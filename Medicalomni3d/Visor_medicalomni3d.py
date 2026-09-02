@@ -60,16 +60,11 @@ class Visor_MedicalOmni3D:
         self.offset_coronal_y = 0
         self.offset_sagital_x = 0
         self.offset_sagital_y = 0
-
-        # --- Soporte 4D (3D + tiempo) ---
         self.es_4d = False
         self.slice_tiempo = 0
-
-        # --- Espaciado de voxel (para corregir proporciones en cortes anisotrópicos) ---
         self.spacing_x = 1.0
         self.spacing_y = 1.0
         self.spacing_z = 1.0
-
         self.renderer = vtk.vtkRenderer()
         self.renderer.SetBackground(0.0, 0.0, 0.0)
         if self.imagen:
@@ -92,11 +87,9 @@ class Visor_MedicalOmni3D:
                     imagen = sitk.DICOMOrient(imagen, "LPS")
                     self.es_4d = False
                 elif dimension == 4:
-                    # DICOMOrient no soporta imágenes 4D, se omite
                     self.es_4d = True
                 else:
                     self.es_4d = False
-
                 self.array_imagen = sitk.GetArrayFromImage(imagen)
                 espaciado = imagen.GetSpacing()
                 self.spacing_x = espaciado[0] if len(espaciado) > 0 else 1.0
@@ -185,7 +178,6 @@ class Visor_MedicalOmni3D:
         sistema = platform.system()
         if sistema == "Darwin" or sistema == "Linux":
             self.mascara = mascara if mascara else None
-            # Limpiar frame_3d
             for widget in self.frame_3d.winfo_children():
                 widget.destroy()
             lbl = tk.Label(
@@ -201,7 +193,6 @@ class Visor_MedicalOmni3D:
             )
             btn.place(relx=0.5, rely=0.65, anchor=tk.CENTER)
         else:
-            # Windows
             import sys
             window_id = self.frame_3d.winfo_id()
             puntero_void_str = f"_{window_id:016x}_p_void" if sys.maxsize > 2 ** 32 else f"_{window_id:08x}_p_void"
@@ -340,9 +331,6 @@ class Visor_MedicalOmni3D:
             if img is None:
                 return
             w, h = img.size
-
-            # Espaciado mínimo como referencia para que las vistas isotrópicas
-            # se comporten igual que antes (factor = 1)
             min_spacing = min(self.spacing_x, self.spacing_y, self.spacing_z)
             if min_spacing <= 0:
                 min_spacing = 1.0
@@ -395,11 +383,6 @@ class Visor_MedicalOmni3D:
         return (img * 255).astype(np.uint8)
 
     def Get_volumen_actual(self):
-        """
-        Devuelve el volumen 3D (Z, Y, X) sobre el que se calculan los cortes.
-        Si la imagen es 4D, devuelve el volumen correspondiente al instante
-        de tiempo actualmente seleccionado (self.slice_tiempo).
-        """
         if self.array_imagen is None:
             return None
         if self.es_4d:
@@ -414,7 +397,6 @@ class Visor_MedicalOmni3D:
                 if volumen is None:
                     img = np.zeros((512, 512), dtype=np.uint8)
                     return Image.fromarray(img)
-
                 if vista == "axial":
                     img = volumen[self.slice_axial, :, :]
                 elif vista == "coronal":
