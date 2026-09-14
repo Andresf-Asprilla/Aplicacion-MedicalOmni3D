@@ -3,9 +3,12 @@ from tkinter import ttk
 from tkinter import messagebox
 import multiprocessing
 import sys,os,platform
+import subprocess
+from Medicalomni3d.Control_procesos import crear_job, IS_WINDOWS
 from Medicalomni3d.Configuracion_medicalomni3d import Configuracion_ventana, Estilos, resource_path
 from Medicalomni3d.Configuracion_Apcivmapcas import Configuracionnnunetv2
 from Medicalomni3d.Dao_medicalomni3d import DAOMedicalOmni3D
+from Medicalomni3d.loggin_MedicalOmni3d import log
 
 try:
     from ctypes import windll
@@ -22,6 +25,15 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.master=master
         self.proceso_procesamiento = None
         self.subproceso_gpu = None
+        self.cancelado = False
+        self.ctx = multiprocessing.get_context("spawn")
+        self.evento_listo_fase1 = None
+        self.evento_cancelar_fase1 = None
+        self.evento_listo_fase2 = None
+        self.proceso_procesamiento = None
+        self.subproceso_gpu = None
+        self.job_fase1 = None
+        self.job_fase2 = None
         self.cancelado = False
         Estilos()
         self.lista_imagenes_tabla=lista_imagenes_tabla
@@ -62,12 +74,24 @@ class VentanaCargaSubproceso(tk.Toplevel):
             return
         self.lbl.config(text="Fase 1/3: Procesando imágenes en segundo plano..." )
         try:
-            ctx = multiprocessing.get_context("spawn")
+            ctx = self.ctx
 
-            self.proceso_procesamiento = ctx.Process(target=Configuracionnnunetv2.Procesamiento_completo,args=(self.imagenes_codificadas,self.normalizacion,self.aplicar_espaciado,self.nuevo_espaciado))
+            self.evento_listo_fase1 = ctx.Event()
+            self.evento_cancelar_fase1 = ctx.Event()
+
+            self.proceso_procesamiento = ctx.Process(
+                target=Configuracionnnunetv2.Procesamiento_completo,
+                args=(self.imagenes_codificadas, self.normalizacion, self.aplicar_espaciado, self.nuevo_espaciado),
+                kwargs={
+                    "evento_listo": self.evento_listo_fase1,
+                    "evento_cancelar": self.evento_cancelar_fase1,
+                }
+            )
 
             self.proceso_procesamiento.start()
-
+            self.job_fase1 = crear_job()
+            if not self.job_fase1.asignar_pid(self.proceso_procesamiento.pid):
+                log.error("No se pudo asignar el proceso de Fase 1 al Job Object")
             self.after(100, self.monitorear_fase_1)
 
         except Exception as e:
@@ -87,7 +111,7 @@ class VentanaCargaSubproceso(tk.Toplevel):
         if self.proceso_procesamiento is None:
             return
 
-        if self.proceso_procesamiento.is_alive():
+        if self._esta_vivo(self.proceso_procesamiento):
             self.after(200, self.monitorear_fase_1)
         else:
 
@@ -105,6 +129,142 @@ class VentanaCargaSubproceso(tk.Toplevel):
 
                 messagebox.showerror("Error Inferencia","El procesamiento de imágenes falló.")
 
+    def _esta_vivo(self, proceso):
+        if proceso is None:
+            return False
+        try:
+            return proceso.is_alive()
+        except Exception:
+            try:
+                pid = proceso.pid
+            except Exception:
+                pid = None
+            return self._pid_sigue_vivo(pid)
+
+    @staticmethod
+    def _pid_sigue_vivo(pid):
+        if pid is None:
+            return False
+        if platform.system() != "Windows":
+            try:
+                os.kill(pid, 0)
+                return True
+            except ProcessLookupError:
+                return False
+            except PermissionError:
+                return True
+            except Exception:
+                return True
+        try:
+            resultado = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}"],
+                capture_output=True, text=True
+            )
+            return str(pid) in resultado.stdout
+        except Exception:
+            return True
+
+    def _matar_proceso_seguro(self, proceso, job=None, timeout=3):
+        if job is not None:
+            try:
+                job.terminar()
+                if not IS_WINDOWS:
+                    try:
+                        if proceso is not None:
+                            proceso.join(timeout=1)
+                    except Exception:
+                        pass
+                    job.matar_fuerte()
+            except Exception as e:
+                log.error(f"Error terminando job object: {e}")
+
+        if proceso is None:
+            if job is not None:
+                try:
+                    job.cerrar()
+                except Exception:
+                    pass
+            return
+
+        try:
+            pid = proceso.pid
+        except Exception:
+            pid = None
+
+        if pid is None:
+            if job is not None:
+                try:
+                    job.cerrar()
+                except Exception:
+                    pass
+            return
+
+        try:
+            proceso.terminate()
+        except Exception:
+            pass
+        try:
+            proceso.join(timeout=timeout)
+        except Exception:
+            pass
+        try:
+            proceso.kill()
+        except Exception:
+            pass
+        try:
+            proceso.join(timeout=timeout)
+        except Exception:
+            pass
+
+        if self._pid_sigue_vivo(pid):
+            try:
+                if platform.system() == "Windows":
+                    subprocess.run(["taskkill", "/F", "/PID", str(pid), "/T"], capture_output=True)
+                else:
+                    import signal
+                    os.kill(pid, signal.SIGKILL)
+            except Exception:
+                pass
+
+        if self._pid_sigue_vivo(pid):
+            try:
+                log.critical(
+                    f"No se pudo terminar el proceso huérfano con PID {pid} tras agotar terminate()/kill()/taskkill.")
+            except Exception:
+                pass
+
+        if job is not None:
+            try:
+                job.cerrar()
+            except Exception:
+                pass
+
+    def _limpiar_carpeta_procesamiento(self):
+        try:
+            carpeta = Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"]
+            if os.listdir(carpeta):
+                Configuracionnnunetv2.Eliminacion_json_salida()
+                for imagen in os.listdir(carpeta):
+                    try:
+                        os.remove(os.path.join(carpeta, imagen))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    def _limpiar_carpeta_almacenamiento(self):
+        try:
+            carpeta = Configuracionnnunetv2.PATH_DICT["nnUNet_Almacenamiento_imagenes"]
+            existentes = os.listdir(carpeta)
+            for imagen in self.lista_imagenes_tabla:
+                if imagen in existentes:
+                    try:
+                        os.remove(os.path.join(carpeta, imagen))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
     def Cancelar_ejecucion(self):
 
         self.cancelado = True
@@ -116,31 +276,53 @@ class VentanaCargaSubproceso(tk.Toplevel):
             self.progreso.stop()
         except:
             pass
-        try:
-            if (self.proceso_procesamiento is not None and self.proceso_procesamiento.is_alive()):
-                self.proceso_procesamiento.terminate()
-                self.proceso_procesamiento.join(timeout=2)
-                if os.listdir(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"]):
-                    Configuracionnnunetv2.Eliminacion_json_salida()
-                    for imagen in os.listdir(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"]):
-                        os.remove(os.path.join(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"], imagen))
-                for imagen in self.lista_imagenes_tabla:
-                    if imagen in os.listdir(Configuracionnnunetv2.PATH_DICT["nnUNet_Almacenamiento_imagenes"]):
-                        os.remove(os.path.join(Configuracionnnunetv2.PATH_DICT["nnUNet_Almacenamiento_imagenes"],imagen))
 
+        try:
+            if self.evento_cancelar_fase1 is not None:
+                self.evento_cancelar_fase1.set()
         except Exception:
             pass
+
+        self._cancelar_fase1_seguro()
+
+    def _cancelar_fase1_seguro(self, intentos=0):
+
+        proceso = self.proceso_procesamiento
         try:
-            if (self.subproceso_gpu is not None and self.subproceso_gpu.is_alive()):
-                self.subproceso_gpu.terminate()
-                if os.listdir(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"]):
-                    Configuracionnnunetv2.Eliminacion_json_salida()
-                    for imagen in os.listdir(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"]):
-                        os.remove(os.path.join(Configuracionnnunetv2.PATH_DICT["nnUNet_Procesamiento_imagenes"], imagen))
-                self.subproceso_gpu.join(timeout=5)
-                if self.subproceso_gpu.is_alive():
-                    self.subproceso_gpu.kill()
-                    self.subproceso_gpu.join()
+            sigue_vivo = proceso is not None and proceso.is_alive()
+        except Exception:
+            sigue_vivo = proceso is not None
+
+        if sigue_vivo:
+            listo = self.evento_listo_fase1 is not None and self.evento_listo_fase1.is_set()
+            if not listo and intentos < 30:
+                self.after(100, lambda: self._cancelar_fase1_seguro(intentos + 1))
+                return
+
+
+        self._matar_proceso_seguro(proceso,job=self.job_fase1, timeout=2)
+        self._limpiar_carpeta_procesamiento()
+        self._limpiar_carpeta_almacenamiento()
+
+        self._cancelar_fase2_seguro()
+
+    def _cancelar_fase2_seguro(self, intentos=0):
+        proceso = self.subproceso_gpu
+        try:
+            sigue_vivo = proceso is not None and proceso.is_alive()
+        except Exception:
+            sigue_vivo = proceso is not None
+
+        if sigue_vivo:
+            listo = self.evento_listo_fase2 is not None and self.evento_listo_fase2.is_set()
+            if not listo and intentos < 80:
+                self.after(100, lambda: self._cancelar_fase2_seguro(intentos + 1))
+                return
+
+        self._matar_proceso_seguro(proceso,job=self.job_fase2, timeout=5)
+        self._limpiar_carpeta_procesamiento()
+        try:
+            Configuracionnnunetv2.Matar_procesos_huerfanos()
         except Exception:
             pass
 
@@ -154,8 +336,11 @@ class VentanaCargaSubproceso(tk.Toplevel):
     def fase_2_inferencia(self):
         self.lbl.config(text=f"Fase 2/3: Ejecutando inferencia...")
         self.update()
-
-        self.subproceso_gpu = Configuracionnnunetv2.Inferencias_modelo_asincrona(modelo_selecionado=self.modelo_seleccionado,device=self.dispositivo)
+        self.evento_listo_fase2 = multiprocessing.Event()
+        self.subproceso_gpu = Configuracionnnunetv2.Inferencias_modelo_asincrona(modelo_selecionado=self.modelo_seleccionado,device=self.dispositivo,evento_listo=self.evento_listo_fase2)
+        self.job_fase2 = crear_job()
+        if self.subproceso_gpu:
+            self.job_fase2.asignar_pid(self.subproceso_gpu.pid)
         if self.subproceso_gpu:
             self.monitorear_subproceso()
         else:
@@ -175,7 +360,7 @@ class VentanaCargaSubproceso(tk.Toplevel):
         if self.subproceso_gpu is None:
             return
 
-        if self.subproceso_gpu.is_alive():
+        if self._esta_vivo(self.subproceso_gpu):
             self.after(500, self.monitorear_subproceso)
             return
 

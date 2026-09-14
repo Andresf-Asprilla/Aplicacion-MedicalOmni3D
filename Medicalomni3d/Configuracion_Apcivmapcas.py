@@ -328,11 +328,13 @@ class Configuracionnnunetv2:
 
     @classmethod
     def Nuevo_espaciado(cls, diccionario_codificado: dict = None, nuevo_espaciado=None,
-                        normalization: bool = False) -> None:
+                        normalization: bool = False, evento_cancelar=None) -> None:
         try:
             if nuevo_espaciado is None:
                 nuevo_espaciado = [1, 1, 1]
             for diccionario_path_codificado in diccionario_codificado.values():
+                if evento_cancelar is not None and evento_cancelar.is_set():
+                    return
                 if normalization:
                     imagen = sitk.ReadImage(diccionario_path_codificado['input_temp_model'])
                     imagen.SetSpacing(nuevo_espaciado)
@@ -345,9 +347,11 @@ class Configuracionnnunetv2:
             log.critical(f"Error: Al establecer un espacioado de {nuevo_espaciado} a las imagenes:\n {e}")
 
     @classmethod
-    def Normalizacion(cls, diccionario_codificado) -> dict:
+    def Normalizacion(cls, diccionario_codificado, evento_cancelar=None) -> dict:
         try:
             for diccionario_path_codificado in diccionario_codificado.values():
+                if evento_cancelar is not None and evento_cancelar.is_set():
+                    return
                 imagen = sitk.ReadImage(diccionario_path_codificado['input_path'])
                 imagen_float = sitk.Cast(imagen, sitk.sitkFloat32)
                 sitk.WriteImage(sitk.RescaleIntensity(imagen_float, 0, 1),
@@ -472,7 +476,7 @@ class Configuracionnnunetv2:
             return None
 
     @classmethod
-    def _run_predict(cls, argv):
+    def _run_predict(cls, argv, evento_listo=None):
         log_file = None
         if sys.stdout is None or sys.stderr is None:
             try:
@@ -485,6 +489,14 @@ class Configuracionnnunetv2:
                 log.error(f"No se pudo redirigir stdout/stderr para nnUNet: {e}")
 
         sys.argv = argv
+
+        # Confirmamos que el proceso hijo ya completó su arranque interno
+        # de multiprocessing (incluyendo los imports de torch/nnunetv2)
+        # y está a punto de correr la inferencia real. A partir de este
+        # punto es seguro para el proceso padre terminarlo si se cancela.
+        if evento_listo is not None:
+            evento_listo.set()
+
         try:
             predict_entry_point()
         except Exception as e:
@@ -505,7 +517,7 @@ class Configuracionnnunetv2:
                     pass
 
     @classmethod
-    def Inferencias_modelo_asincrona(cls, modelo_selecionado: str = "", device: str = None):
+    def Inferencias_modelo_asincrona(cls, modelo_selecionado: str = "", device: str = None, evento_listo=None):
         try:
             if device is not None:
                 path_json = cls.BASE_CONFIGURACION
@@ -526,7 +538,7 @@ class Configuracionnnunetv2:
                             "-device", device,
                             "-p", plant_model,
                         ]
-                        proceso = multiprocessing.Process(target=cls._run_predict, args=(argv,))
+                        proceso = multiprocessing.Process(target=cls._run_predict, args=(argv, evento_listo))
                         proceso.start()
                         return proceso
                     else:
@@ -606,10 +618,12 @@ class Configuracionnnunetv2:
             log.error(f"Error: En la desinstalacion del modelo {modelo_selecionado}:\n {e}")
 
     @classmethod
-    def Sin_Normalizacion_espaciado(cls, diccionario_codificado: dict = None) -> None:
+    def Sin_Normalizacion_espaciado(cls, diccionario_codificado: dict = None, evento_cancelar=None) -> None:
         try:
             if len(diccionario_codificado) > 0 and diccionario_codificado is not None:
                 for imageneseleccionada in diccionario_codificado.values():
+                    if evento_cancelar is not None and evento_cancelar.is_set():
+                        return
                     imagen = sitk.ReadImage(imageneseleccionada["input_path"])
                     sitk.WriteImage(imagen, imageneseleccionada["input_temp_model"])
         except Exception as e:
@@ -617,20 +631,27 @@ class Configuracionnnunetv2:
 
     @classmethod
     def Procesamiento_completo(cls, lista_codificada: list = None, Normalizacion: bool = False, Espaciado: bool = False,
-                               nuevo_espacio: list = None) -> None:
+                               nuevo_espacio: list = None, evento_listo=None, evento_cancelar=None) -> None:
+        # Esta es la PRIMERA línea que se ejecuta dentro del proceso hijo
+        # ya completamente arrancado (superó spawn_main/duplicate sin
+        # problema). A partir de aquí es seguro para el proceso padre
+        # terminarlo si el usuario cancela.
+        if evento_listo is not None:
+            evento_listo.set()
         try:
 
             if Normalizacion and Espaciado:
-                cls.Normalizacion(diccionario_codificado=lista_codificada)
-                cls.Nuevo_espaciado(diccionario_codificado=lista_codificada, nuevo_espaciado=nuevo_espacio,
-                                    normalization=Normalizacion)
+                cls.Normalizacion(diccionario_codificado=lista_codificada, evento_cancelar=evento_cancelar)
+                if not (evento_cancelar is not None and evento_cancelar.is_set()):
+                    cls.Nuevo_espaciado(diccionario_codificado=lista_codificada, nuevo_espaciado=nuevo_espacio,
+                                        normalization=Normalizacion, evento_cancelar=evento_cancelar)
             elif Normalizacion:
-                cls.Normalizacion(lista_codificada)
+                cls.Normalizacion(lista_codificada, evento_cancelar=evento_cancelar)
             elif Espaciado:
                 cls.Nuevo_espaciado(diccionario_codificado=lista_codificada, nuevo_espaciado=nuevo_espacio,
-                                    normalization=Normalizacion)
+                                    normalization=Normalizacion, evento_cancelar=evento_cancelar)
             else:
-                cls.Sin_Normalizacion_espaciado(diccionario_codificado=lista_codificada)
+                cls.Sin_Normalizacion_espaciado(diccionario_codificado=lista_codificada, evento_cancelar=evento_cancelar)
 
         except Exception as e:
             log.critical(f"Error: En los procesos de normalizacion y espaciado:\n {e}")
