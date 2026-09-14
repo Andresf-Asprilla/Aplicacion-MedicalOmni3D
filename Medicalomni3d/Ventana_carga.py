@@ -319,6 +319,12 @@ class VentanaCargaSubproceso(tk.Toplevel):
             if not listo and intentos < 80:
                 self.after(100, lambda: self._cancelar_fase2_seguro(intentos + 1))
                 return
+            if platform.system()!="Windows":
+                if listo and self.job_fase2 is not None and proceso is not None:
+                    try:
+                        self.job_fase2.asignar_pid(proceso.pid)
+                    except Exception:
+                        pass
 
         self._matar_proceso_seguro(proceso,job=self.job_fase2, timeout=5)
         self._limpiar_carpeta_procesamiento()
@@ -341,8 +347,9 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.subproceso_gpu = Configuracionnnunetv2.Inferencias_modelo_asincrona(modelo_selecionado=self.modelo_seleccionado,device=self.dispositivo,evento_listo=self.evento_listo_fase2)
         self.job_fase2 = crear_job()
         if self.subproceso_gpu:
-            self.job_fase2.asignar_pid(self.subproceso_gpu.pid)
             self.monitorear_subproceso()
+            if platform.system()=="Windows":
+                self.job_fase2.asignar_pid(self.subproceso_gpu.pid)
         else:
             self.grab_release()
             self.destroy()
