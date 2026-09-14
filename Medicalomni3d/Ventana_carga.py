@@ -90,8 +90,6 @@ class VentanaCargaSubproceso(tk.Toplevel):
 
             self.proceso_procesamiento.start()
             self.job_fase1 = crear_job()
-            if not self.job_fase1.asignar_pid(self.proceso_procesamiento.pid):
-                log.error("No se pudo asignar el proceso de Fase 1 al Job Object")
             self.after(100, self.monitorear_fase_1)
 
         except Exception as e:
@@ -298,12 +296,16 @@ class VentanaCargaSubproceso(tk.Toplevel):
             if not listo and intentos < 30:
                 self.after(100, lambda: self._cancelar_fase1_seguro(intentos + 1))
                 return
+            if listo and self.job_fase1 is not None and proceso is not None:
+                try:
+                    self.job_fase1.asignar_pid(proceso.pid)
+                except Exception:
+                    pass
 
 
         self._matar_proceso_seguro(proceso,job=self.job_fase1, timeout=2)
         self._limpiar_carpeta_procesamiento()
         self._limpiar_carpeta_almacenamiento()
-
         self._cancelar_fase2_seguro()
 
     def _cancelar_fase2_seguro(self, intentos=0):
@@ -318,6 +320,12 @@ class VentanaCargaSubproceso(tk.Toplevel):
             if not listo and intentos < 80:
                 self.after(100, lambda: self._cancelar_fase2_seguro(intentos + 1))
                 return
+
+            if listo and self.job_fase2 is not None and proceso is not None:
+                try:
+                    self.job_fase2.asignar_pid(proceso.pid)
+                except Exception:
+                    pass
 
         self._matar_proceso_seguro(proceso,job=self.job_fase2, timeout=5)
         self._limpiar_carpeta_procesamiento()
@@ -339,8 +347,6 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.evento_listo_fase2 = multiprocessing.Event()
         self.subproceso_gpu = Configuracionnnunetv2.Inferencias_modelo_asincrona(modelo_selecionado=self.modelo_seleccionado,device=self.dispositivo,evento_listo=self.evento_listo_fase2)
         self.job_fase2 = crear_job()
-        if self.subproceso_gpu:
-            self.job_fase2.asignar_pid(self.subproceso_gpu.pid)
         if self.subproceso_gpu:
             self.monitorear_subproceso()
         else:

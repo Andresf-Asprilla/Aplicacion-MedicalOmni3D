@@ -75,45 +75,38 @@ if IS_WINDOWS:
 
 
 class _JobUnix:
-    """
-    Equivalente en Linux/Mac a un Job Object: agrupa el proceso hijo y
-    todo lo que él a su vez lance en su propio process group (mismo
-    pgid). asignar_pid no hace falta llamarlo si el proceso ya se
-    lanzó con start_new_session=True (ver abajo); se deja por simetría
-    de interfaz con _JobWindows.
-    """
     def __init__(self):
+        self.pid = None
         self.pgid = None
 
     def asignar_pid(self, pid: int) -> bool:
-        # En Unix el grupo se fija en el momento de crear el proceso
-        # (start_new_session=True / os.setsid), no después. Aquí solo
-        # registramos el pgid para poder matarlo luego.
+        self.pid = pid
         try:
-            self.pgid = os.getpgid(pid)
-            return True
+            pgid = os.getpgid(pid)
         except Exception:
             return False
+        if pgid == pid:
+            self.pgid = pgid
+            return True
+        return False
 
     def terminar(self, exit_code: int = 1):
-        if self.pgid is None:
-            return
-        try:
-            os.killpg(self.pgid, signal.SIGTERM)
-        except ProcessLookupError:
-            pass
-        except Exception:
-            pass
+        if self.pgid is not None and self.pgid == self.pid:
+            try:
+                os.killpg(self.pgid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            except Exception:
+                pass
 
     def matar_fuerte(self):
-        if self.pgid is None:
-            return
-        try:
-            os.killpg(self.pgid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        except Exception:
-            pass
+        if self.pgid is not None and self.pgid == self.pid:
+            try:
+                os.killpg(self.pgid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except Exception:
+                pass
 
     def cerrar(self):
         pass
