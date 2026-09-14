@@ -341,7 +341,7 @@ class VentanaCargaSubproceso(tk.Toplevel):
         self.subproceso_gpu = Configuracionnnunetv2.Inferencias_modelo_asincrona(modelo_selecionado=self.modelo_seleccionado,device=self.dispositivo,evento_listo=self.evento_listo_fase2)
         self.job_fase2 = crear_job()
         if self.subproceso_gpu:
-            self.job_fase2.asignar_pid(proceso.pid)
+            self.job_fase2.asignar_pid(self.subproceso_gpu.pid)
             self.monitorear_subproceso()
         else:
             self.grab_release()
