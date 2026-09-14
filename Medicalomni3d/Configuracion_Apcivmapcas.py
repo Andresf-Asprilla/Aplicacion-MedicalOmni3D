@@ -477,6 +477,11 @@ class Configuracionnnunetv2:
 
     @classmethod
     def _run_predict(cls, argv, evento_listo=None):
+        if platform.system() != "Windows":
+            try:
+                os.setsid()
+            except Exception:
+                pass
         log_file = None
         if sys.stdout is None or sys.stderr is None:
             try:
@@ -489,11 +494,6 @@ class Configuracionnnunetv2:
                 log.error(f"No se pudo redirigir stdout/stderr para nnUNet: {e}")
 
         sys.argv = argv
-
-        # Confirmamos que el proceso hijo ya completó su arranque interno
-        # de multiprocessing (incluyendo los imports de torch/nnunetv2)
-        # y está a punto de correr la inferencia real. A partir de este
-        # punto es seguro para el proceso padre terminarlo si se cancela.
         if evento_listo is not None:
             evento_listo.set()
 
@@ -632,10 +632,11 @@ class Configuracionnnunetv2:
     @classmethod
     def Procesamiento_completo(cls, lista_codificada: list = None, Normalizacion: bool = False, Espaciado: bool = False,
                                nuevo_espacio: list = None, evento_listo=None, evento_cancelar=None) -> None:
-        # Esta es la PRIMERA línea que se ejecuta dentro del proceso hijo
-        # ya completamente arrancado (superó spawn_main/duplicate sin
-        # problema). A partir de aquí es seguro para el proceso padre
-        # terminarlo si el usuario cancela.
+        if platform.system() != "Windows":
+            try:
+                os.setsid()
+            except Exception:
+                pass
         if evento_listo is not None:
             evento_listo.set()
         try:
